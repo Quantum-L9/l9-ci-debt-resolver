@@ -1,0 +1,71 @@
+{
+  "$id": "https://l9.dev/schemas/remediation_trace.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "Trace of resolver actions for auditability and downstream intelligence.",
+  "properties": {
+    "artifacts": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "pr_number": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "repo": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "started_at": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail",
+        "blocked",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "trace_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "validation": {
+      "additionalProperties": true,
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "repo",
+    "trace_id",
+    "started_at",
+    "status",
+    "steps"
+  ],
+  "title": "Remediation Trace",
+  "type": "object"
+}

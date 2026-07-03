@@ -1,0 +1,60 @@
+name: Dispatch CI Debt Intelligence
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "outputs/findings/**"
+      - "outputs/traces/**"
+      - "scripts/export_findings.sh"
+      - "tools/validation/validate_findings.py"
+      - "schemas/**"
+      - ".github/workflows/dispatch-intelligence.yml"
+  push:
+    branches: [main]
+    paths:
+      - "outputs/findings/**"
+      - "outputs/traces/**"
+      - "scripts/export_findings.sh"
+      - "tools/validation/validate_findings.py"
+      - "schemas/**"
+      - ".github/workflows/dispatch-intelligence.yml"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  export-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Export and validate resolver corpus
+        run: bash scripts/export_findings.sh dist/corpus
+      - name: Upload resolver corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-debt-resolver-corpus
+          path: dist/corpus/*
+          if-no-files-found: error
+      - name: Dispatch intelligence ingest
+        if: ${{ github.event_name != 'pull_request' && secrets.L9_INTELLIGENCE_DISPATCH_TOKEN != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.L9_INTELLIGENCE_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/Quantum-L9/l9-ci-debt-intelligence/dispatches \
+            -f event_type=ci_debt_resolver_corpus_ready \
+            -f client_payload[schema_version]="1.0" \
+            -f client_payload[producer]="l9-ci-debt-resolver" \
+            -f client_payload[source_repo]="${{ github.repository }}" \
+            -f client_payload[source_sha]="${{ github.sha }}" \
+            -f client_payload[run_id]="${{ github.run_id }}" \
+            -f client_payload[run_attempt]="${{ github.run_attempt }}" \
+            -f client_payload[artifact_name]="ci-debt-resolver-corpus"
+      - name: Dispatch skipped
+        if: ${{ github.event_name == 'pull_request' || secrets.L9_INTELLIGENCE_DISPATCH_TOKEN == '' }}
+        run: echo "L9_INTELLIGENCE_DISPATCH_TOKEN not set; uploaded artifact only."

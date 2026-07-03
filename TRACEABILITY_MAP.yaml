@@ -1,0 +1,23 @@
+added_files:
+  AGENTS.md:
+    reason: define resolver role, authority order, allowed actions, forbidden actions, validation gates, and handoff artifacts
+  schemas/ci_debt_finding.schema.json:
+    reason: normalize resolver findings for unified corpus ingestion
+  schemas/remediation_trace.schema.json:
+    reason: preserve remediation trace evidence
+  outputs/findings/.gitkeep:
+    reason: keep findings output directory in git
+  outputs/traces/.gitkeep:
+    reason: keep trace output directory in git
+  tools/validation/validate_findings.py:
+    reason: validate corpus before artifact upload or dispatch
+  scripts/export_findings.sh:
+    reason: deterministic export and manifest generation
+  .github/workflows/dispatch-intelligence.yml:
+    reason: dispatch corpus readiness with run coordinates
+  MANIFEST.md:
+    reason: document commit pack responsibility map
+  VALIDATION.md:
+    reason: document proof commands
+  REGRESSION_GUARD.md:
+    reason: prevent false corpus, fake validation, and downstream patching

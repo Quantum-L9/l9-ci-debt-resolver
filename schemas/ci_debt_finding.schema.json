@@ -1,0 +1,146 @@
+{
+  "$id": "https://l9.dev/schemas/ci_debt_finding.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "description": "Normalized CI debt finding emitted by l9-ci-debt-resolver for downstream intelligence ingestion.",
+  "properties": {
+    "after": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "before": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "check_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "confidence": {
+      "default": "unknown",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "unknown"
+      ],
+      "type": "string"
+    },
+    "created_at": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "failure_type": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "file": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "finding_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "job_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "line": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "repaired",
+        "failed",
+        "blocked",
+        "unknown",
+        "observed"
+      ],
+      "type": "string"
+    },
+    "patch_type": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "pr_number": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "promotion_candidate": {
+      "additionalProperties": true,
+      "default": {},
+      "type": "object"
+    },
+    "repair_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "repo": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "root_cause": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "run_attempt": {
+      "type": [
+        "integer",
+        "string",
+        "null"
+      ]
+    },
+    "run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "source": {
+      "const": "l9-ci-debt-resolver",
+      "type": "string"
+    },
+    "tool": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "source",
+    "repo",
+    "finding_id",
+    "failure_type",
+    "root_cause",
+    "outcome",
+    "created_at"
+  ],
+  "title": "CI Debt Finding",
+  "type": "object"
+}
