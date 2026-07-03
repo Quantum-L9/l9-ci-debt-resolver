@@ -28,6 +28,8 @@ permissions:
 jobs:
   export-and-dispatch:
     runs-on: ubuntu-latest
+    env:
+      L9_INTELLIGENCE_DISPATCH_TOKEN: ${{ secrets.L9_INTELLIGENCE_DISPATCH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -42,9 +44,9 @@ jobs:
           path: dist/corpus/*
           if-no-files-found: error
       - name: Dispatch intelligence ingest
-        if: ${{ github.event_name != 'pull_request' && secrets.L9_INTELLIGENCE_DISPATCH_TOKEN != '' }}
+        if: ${{ github.event_name != 'pull_request' && env.L9_INTELLIGENCE_DISPATCH_TOKEN != '' }}
         env:
-          GH_TOKEN: ${{ secrets.L9_INTELLIGENCE_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ env.L9_INTELLIGENCE_DISPATCH_TOKEN }}
         run: |
           gh api repos/Quantum-L9/l9-ci-debt-intelligence/dispatches \
             -f event_type=ci_debt_resolver_corpus_ready \
@@ -56,5 +58,5 @@ jobs:
             -f client_payload[run_attempt]="${{ github.run_attempt }}" \
             -f client_payload[artifact_name]="ci-debt-resolver-corpus"
       - name: Dispatch skipped
-        if: ${{ github.event_name == 'pull_request' || secrets.L9_INTELLIGENCE_DISPATCH_TOKEN == '' }}
+        if: ${{ github.event_name == 'pull_request' || env.L9_INTELLIGENCE_DISPATCH_TOKEN == '' }}
         run: echo "L9_INTELLIGENCE_DISPATCH_TOKEN not set; uploaded artifact only."
