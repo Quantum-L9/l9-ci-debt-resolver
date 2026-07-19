@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/acquisition-report/v1",
+  "title": "L9 Resolver Acquisition Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "acquisition_id",
+    "provider",
+    "repository",
+    "run_id",
+    "run_status",
+    "run_conclusion",
+    "failed_job_count",
+    "evidence_count",
+    "complete_evidence_count",
+    "total_raw_bytes",
+    "terminal_state",
+    "started_at",
+    "completed_at",
+    "evidence",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.acquisition-report/v1"
+    },
+    "acquisition_id": {
+      "type": "string",
+      "pattern": "^acquisition_[0-9a-f]{64}$"
+    },
+    "provider": {
+      "const": "github_actions"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_conclusion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "failed_job_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "evidence_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "complete_evidence_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total_raw_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "terminal_state": {
+      "enum": [
+        "evidence_ready",
+        "clean",
+        "insufficient_log_evidence",
+        "remote_operation_failed"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://resolver/ci-run-evidence/v1"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

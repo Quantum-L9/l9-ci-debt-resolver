@@ -1,0 +1,90 @@
+schema: l9.resolver-remote-resolution-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P4
+  status: authoritative
+preconditions:
+  required:
+    - local remediation status is validated
+    - local repository HEAD matches remediation repository revision
+    - working tree contains only expected remediation paths
+    - remote repository identity matches requested repository
+    - target branch is not protected
+    - repair branch satisfies naming policy
+    - push authorization is explicit
+    - attempt limit has not been reached
+branch_policy:
+  allowed_prefixes:
+    - resolver/
+    - repair/resolver/
+  prohibited:
+    - main
+    - master
+    - trunk
+    - production
+    - release
+    - protected branches
+    - arbitrary user branches
+  normalization:
+    maximum_length: 120
+    allowed_characters: "[A-Za-z0-9._/-]"
+    deterministic_suffix: failure_fingerprint_prefix
+commit:
+  deterministic:
+    author_name: Quantum-L9 Resolver
+    author_email: resolver@invalid.local
+    message_fields:
+      - resolver phase
+      - failure fingerprint
+      - classification ID
+      - remediation plan ID
+      - validation result ID
+  prohibitions:
+    - GPG credential discovery
+    - amend of unrelated commit
+    - commit of unexpected paths
+    - commit of untracked unrelated files
+push:
+  allowed:
+    - explicit repair branch
+    - configured remote
+    - non-force push
+  prohibited:
+    - force push
+    - push to protected branch
+    - wildcard refspec
+    - tag push
+    - deletion refspec
+    - credential logging
+rerun:
+  provider: github_actions
+  dispatch:
+    operation: rerun_failed_jobs
+    fallback: rerun_workflow
+  observation:
+    poll_interval_seconds: 10
+    timeout_seconds: 1800
+    maximum_provider_errors: 5
+  accepted_success:
+    status: completed
+    conclusion: success
+attempt_policy:
+  maximum_attempts_per_failure_fingerprint: 2
+  maximum_remote_operations_per_attempt: 6
+repeated_failure:
+  same_fingerprint:
+    terminal_state: repeated_failure
+  different_fingerprint:
+    terminal_state: new_failure
+terminal_states:
+  - clean
+  - repeated_failure
+  - new_failure
+  - attempt_limit_reached
+  - remote_operation_failed
+  - rerun_timeout
+  - validation_failed
+  - unsupported
+merge:
+  automatic: prohibited
+  manual_PR: allowed_in_future_phase

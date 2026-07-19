@@ -1,0 +1,164 @@
+schema: l9.resolver-intelligence-feedback-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P5
+  status: authoritative
+ownership:
+  resolver:
+    owns:
+      - resolution-event construction
+      - repeated-failure telemetry
+      - privacy validation
+      - corpus-safe provenance
+      - idempotent delivery
+      - delivery retries
+      - local outbox state
+      - delivery receipts
+  intelligence:
+    owns:
+      - event ingestion
+      - corpus mining
+      - recurrence analysis
+      - remediation effectiveness analysis
+      - pattern promotion
+      - historical evidence retrieval
+  resolver_must_not:
+    - write directly to Intelligence storage internals
+    - create Intelligence findings
+    - create prevention artifacts
+    - mine historical corpora
+    - transmit raw CI logs
+    - transmit source content
+    - transmit patch content
+event_types:
+  - resolution_succeeded
+  - repeated_failure
+  - new_failure
+  - attempt_limit_reached
+  - remote_operation_failed
+  - rerun_timeout
+  - validation_failed
+  - unsupported
+event_identity:
+  deterministic_inputs:
+    - repository pseudonym
+    - failure fingerprint
+    - attempt number
+    - terminal state
+    - rerun identity
+    - validation result identity
+  excluded_inputs:
+    - timestamps
+    - credentials
+    - raw logs
+    - source content
+    - developer identity
+    - absolute paths
+    - access tokens
+    - authorization headers
+privacy:
+  allowed:
+    - repository pseudonym
+    - provider name
+    - failure fingerprint
+    - classification category
+    - confidence bucket
+    - remediation class
+    - changed-file count
+    - changed-line bucket
+    - validation result state
+    - validation duration bucket
+    - terminal state
+    - repeated-failure boolean
+    - attempt number
+    - SDK canonical finding IDs
+    - SDK canonical contract IDs
+    - capability profile
+    - limitation codes
+    - normalized language family
+    - corpus-safe provenance hashes
+  prohibited:
+    - raw log lines
+    - source code
+    - patch body
+    - diff body
+    - absolute paths
+    - repository-relative file paths
+    - branch names
+    - commit messages
+    - developer names
+    - developer email addresses
+    - GitHub actor identity
+    - IP addresses
+    - environment variables
+    - credentials
+    - secrets
+    - authorization tokens
+    - URLs containing credentials
+    - workflow input values
+    - arbitrary provider payloads
+repository_identity:
+  transport_form: HMAC-SHA256 pseudonym
+  raw_repository_name_transmission: prohibited
+  secret_source: L9_FEEDBACK_PSEUDONYM_KEY
+delivery:
+  required:
+    - event schema validation
+    - privacy validation
+    - deterministic event ID
+    - deterministic idempotency key
+    - durable outbox write before delivery
+    - bounded retry
+    - delivery receipt
+    - dead-letter state after exhaustion
+  retry:
+    maximum_attempts: 5
+    initial_delay_seconds: 1
+    maximum_delay_seconds: 30
+    exponential_multiplier: 2
+    jitter: deterministic
+    Retry-After: honored_when_bounded
+  success_statuses:
+    - 200
+    - 201
+    - 202
+    - 204
+    - 409
+  retryable_statuses:
+    - 408
+    - 425
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+  permanent_failure:
+    - schema rejection
+    - privacy rejection
+    - authentication rejection
+    - unsupported contract version
+    - non-retryable HTTP response
+outbox:
+  states:
+    - pending
+    - delivering
+    - delivered
+    - dead_letter
+  storage:
+    permissions: owner_only
+    atomic_writes: required
+    raw_logs: prohibited
+    source_content: prohibited
+corpus_provenance:
+  include:
+    - event schema version
+    - resolver version
+    - SDK snapshot identity hash
+    - validation result identity hash
+    - failure fingerprint
+    - evidence identity hashes
+    - transport receipt identity
+  exclude:
+    - raw SDK snapshot content
+    - raw evidence content
+    - raw validation transcript output

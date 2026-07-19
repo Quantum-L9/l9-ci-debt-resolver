@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/feedback-outbox-record/v1",
+  "title": "L9 Resolver Feedback Outbox Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "state",
+    "event",
+    "attempt_count",
+    "next_attempt_at",
+    "last_error_code",
+    "receipt",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.feedback-outbox-record/v1"
+    },
+    "record_id": {
+      "type": "string",
+      "pattern": "^feedback_outbox_[0-9a-f]{64}$"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "delivering",
+        "delivered",
+        "dead_letter"
+      ]
+    },
+    "event": {
+      "$ref": "l9://resolver/intelligence-feedback-event/v1"
+    },
+    "attempt_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "next_attempt_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_error_code": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 200
+    },
+    "receipt": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "l9://resolver/feedback-delivery-receipt/v1"
+        }
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

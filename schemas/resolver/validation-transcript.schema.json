@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/validation-transcript/v1",
+  "title": "L9 Resolver Validation Transcript",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "transcript_id",
+    "validation_plan_id",
+    "validation_result_id",
+    "steps",
+    "graph_delta",
+    "result",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.validation-transcript/v1"
+    },
+    "transcript_id": {
+      "type": "string",
+      "pattern": "^validation_transcript_[0-9a-f]{64}$"
+    },
+    "validation_plan_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation_result_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "graph_delta": {
+      "$ref": "#/$defs/graphDelta"
+    },
+    "result": {
+      "enum": [
+        "passed",
+        "failed",
+        "unavailable",
+        "incomplete"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step_id",
+        "kind",
+        "command_sha256",
+        "exit_code",
+        "duration_bucket",
+        "stdout_sha256",
+        "stderr_sha256",
+        "result"
+      ],
+      "properties": {
+        "step_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "original_failure",
+            "targeted_test",
+            "affected_contract",
+            "graph_delta",
+            "full_gate"
+          ]
+        },
+        "command_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "exit_code": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "duration_bucket": {
+          "enum": [
+            "lt_1s",
+            "1_10s",
+            "10_60s",
+            "1_5m",
+            "5_15m",
+            "gt_15m",
+            "unknown"
+          ]
+        },
+        "stdout_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "stderr_sha256": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "result": {
+          "enum": [
+            "passed",
+            "failed",
+            "unavailable",
+            "incomplete"
+          ]
+        }
+      }
+    },
+    "graphDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "before_snapshot_id",
+        "after_worktree_digest",
+        "changed_paths",
+        "changed_package_boundaries",
+        "changed_contract_ids",
+        "changed_dependency_edges",
+        "unexpected_changed_paths"
+      ],
+      "properties": {
+        "before_snapshot_id": {
+          "type": "string"
+        },
+        "after_worktree_digest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "changed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "changed_package_boundaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "changed_contract_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "changed_dependency_edges": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "unexpected_changed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

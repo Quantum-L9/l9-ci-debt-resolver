@@ -1,0 +1,46 @@
+{
+  "consolidation_repairs": [
+    "Normalized markdown transport corruption in shell builders.",
+    "Seeded the SDK schema registry expected by RESOLVER-P2.",
+    "Added the P2 diagnosis-runtime compatibility export required by RESOLVER-P3.",
+    "Removed obsolete lower-phase tests that asserted P0-P4 state against the final P6 repository.",
+    "Repaired redaction, path normalization, stack-frame deduplication, classification, and delegation fixture integration defects.",
+    "Reconstructed valid phase acceptance-gate YAML and GitHub Actions workflows."
+  ],
+  "file_count_before_manifest": 257,
+  "generated_at": "2026-07-19T14:31:45.045252Z",
+  "integrated_phases": [
+    "RESOLVER-P0",
+    "RESOLVER-P1",
+    "RESOLVER-P2",
+    "RESOLVER-P3",
+    "RESOLVER-P4",
+    "RESOLVER-P5",
+    "RESOLVER-P6"
+  ],
+  "repository": "Quantum-L9/l9-ci-debt-resolver",
+  "schema_version": "l9.consolidation-validation-report/v1",
+  "status": "validated_with_environment_limitation",
+  "validation": {
+    "capabilities_command": "passed",
+    "coverage_percent": 62,
+    "json_schema_meta_validation": {
+      "schema_count": 27,
+      "status": "passed"
+    },
+    "json_yaml_parse": "passed",
+    "mypy": {
+      "reason": "mypy and hatchling unavailable in offline sandbox",
+      "status": "not_run"
+    },
+    "pytest": {
+      "status": "passed",
+      "tests": 112
+    },
+    "python_compileall": "passed",
+    "ruff": {
+      "reason": "ruff and hatchling unavailable in offline sandbox",
+      "status": "not_run"
+    }
+  }
+}

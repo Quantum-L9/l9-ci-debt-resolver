@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/resolution-outcome/v1",
+  "title": "L9 Resolver Resolution Outcome",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "outcome_id",
+    "attempt_id",
+    "terminal_state",
+    "original_failure_fingerprint",
+    "observed_failure_fingerprint",
+    "repository",
+    "branch",
+    "commit_sha",
+    "original_run_id",
+    "rerun_id",
+    "evidence_ids",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.resolution-outcome/v1"
+    },
+    "outcome_id": {
+      "type": "string",
+      "pattern": "^resolution_outcome_[0-9a-f]{64}$"
+    },
+    "attempt_id": {
+      "type": "string"
+    },
+    "terminal_state": {
+      "enum": [
+        "clean",
+        "repeated_failure",
+        "new_failure",
+        "attempt_limit_reached",
+        "remote_operation_failed",
+        "rerun_timeout",
+        "validation_failed",
+        "unsupported"
+      ]
+    },
+    "original_failure_fingerprint": {
+      "type": "string"
+    },
+    "observed_failure_fingerprint": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "repository": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "commit_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "original_run_id": {
+      "type": "string"
+    },
+    "rerun_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

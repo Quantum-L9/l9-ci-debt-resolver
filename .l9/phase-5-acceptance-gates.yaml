@@ -1,0 +1,49 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P5
+
+gates:
+
+  - id: p5-aggregate-only
+    requirement: >
+      Feedback contains aggregate classification, remediation, validation,
+      correlation, and terminal-state data only.
+  - id: p5-no-raw-logs
+    requirement: >
+      Raw CI logs, stdout, stderr, and log excerpts cannot enter feedback.
+  - id: p5-no-source
+    requirement: >
+      Source content, patches, diffs, and file paths cannot enter feedback.
+  - id: p5-no-developer-identity
+    requirement: >
+      Developer names, emails, actors, IP addresses, and credentials cannot
+      enter feedback.
+  - id: p5-pseudonymization
+    requirement: >
+      Raw repository identity is replaced with HMAC-SHA256 pseudonymization.
+  - id: p5-deterministic-ID
+    requirement: >
+      Equivalent outcomes produce the same event ID and idempotency key.
+  - id: p5-outbox-before-delivery
+    requirement: >
+      Events are atomically persisted before transport delivery.
+  - id: p5-retry-bounds
+    requirement: >
+      Retry attempts and delays are bounded.
+  - id: p5-retry-after
+    requirement: >
+      Bounded Retry-After values are honored.
+  - id: p5-duplicate-success
+    requirement: >
+      Duplicate acknowledgements are treated as successful idempotent delivery.
+  - id: p5-dead-letter
+    requirement: >
+      Permanent and exhausted delivery failures enter dead-letter state.
+  - id: p5-public-boundary
+    requirement: >
+      Resolver uses a public Intelligence event contract and no private
+      Intelligence modules.
+  - id: p5-no-prevention
+    requirement: >
+      Resolver does not create prevention artifacts or mine the corpus.

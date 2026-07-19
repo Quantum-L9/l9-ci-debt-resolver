@@ -1,0 +1,44 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P1
+
+gates:
+
+  - id: p1-run-acquisition
+    requirement: >
+      Failed-run metadata is retrieved through the provider API.
+  - id: p1-job-pagination
+    requirement: >
+      All failed jobs are retrieved with bounded explicit pagination.
+  - id: p1-per-job-logs
+    requirement: >
+      Each failed job is assigned an independently retrieved log.
+  - id: p1-log-hash
+    requirement: >
+      Every acquired log has a deterministic SHA-256 hash.
+  - id: p1-provenance
+    requirement: >
+      Every log includes provider, run, job, retrieval, API, HTTP, hash,
+      size, completeness, and limitation provenance.
+  - id: p1-truncation
+    requirement: >
+      Size overflow, content-length mismatch, explicit markers, incomplete
+      downloads, and missing terminal markers are visible.
+  - id: p1-fail-closed
+    requirement: >
+      Any failed job without complete evidence produces
+      insufficient_log_evidence.
+  - id: p1-redaction
+    requirement: >
+      Credentials, private keys, email addresses, absolute paths, and checkout
+      roots are removed before durable persistence.
+  - id: p1-no-raw-persistence
+    requirement: >
+      No raw or unredacted log persistence path exists.
+  - id: p1-retry-bounds
+    requirement: >
+      Provider retries are finite and honor bounded Retry-After values.
+  - id: p1-no-remediation
+    requirement: >
+      RESOLVER-P1 does not mutate repositories or select remediation.

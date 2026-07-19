@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/resolver-terminal-state/v1",
+  "title": "L9 Resolver State",
+  "$ref": "#/$defs/state",
+  "$defs": {
+    "state": {
+      "enum": [
+        "created",
+        "evidence_acquired",
+        "classified",
+        "remediation_planned",
+        "validating",
+        "validated",
+        "pushed",
+        "observing",
+        "clean",
+        "insufficient_log_evidence",
+        "unsupported",
+        "validation_failed",
+        "repeated_failure",
+        "new_failure",
+        "attempt_limit_reached",
+        "remote_operation_failed",
+        "rerun_timeout"
+      ]
+    }
+  }
+}

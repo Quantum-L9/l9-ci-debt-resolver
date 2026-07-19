@@ -1,0 +1,167 @@
+schema: l9.resolver-pr-repair-delegation-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P6
+  status: authoritative
+purpose:
+  description: >
+    Delegate proposal generation to PR_Repair only when the Resolver cannot
+    safely produce a bounded remediation directly.
+authority:
+  resolver_retains:
+    - CI evidence authority
+    - classification authority
+    - repository snapshot authority
+    - validation authority
+    - protected-path policy
+    - workspace mutation authority
+    - branch policy
+    - push authorization
+    - rerun observation
+    - attempt limits
+    - terminal-state selection
+    - feedback event emission
+  PR_Repair_may:
+    - analyze bounded, privacy-safe context
+    - return a remediation proposal
+    - return an explicit unsupported response
+    - return clarification requirements as structured limitations
+  PR_Repair_must_not:
+    - mutate repositories
+    - invoke Git
+    - execute arbitrary commands
+    - execute validation
+    - create branches
+    - push commits
+    - trigger CI
+    - merge changes
+    - override Resolver policy
+    - redefine SDK identities
+    - create Resolver evidence
+    - create Resolver classifications
+    - emit Resolver terminal states
+eligibility:
+  allowed_when:
+    - classification remediation eligibility is approval_required
+    - classification remediation eligibility is unsupported
+    - direct remediation policy rejected a proposal as insufficiently bounded
+    - repeated failure occurred and attempt limit has not been exceeded
+    - a new failure requires proposal generation
+  prohibited_when:
+    - evidence is incomplete
+    - repository snapshot is unavailable
+    - failure fingerprint is unavailable
+    - privacy-safe context cannot be constructed
+    - attempt limit has been reached
+    - protected-path change is required
+    - security or governance policy forbids delegation
+request_context:
+  allowed:
+    - request ID
+    - repository pseudonym
+    - failure fingerprint
+    - classification category
+    - confidence bucket
+    - remediation eligibility
+    - failed-command hash
+    - normalized error signatures
+    - SDK snapshot identity hash
+    - canonical entity IDs
+    - canonical finding IDs
+    - canonical contract IDs
+    - related test IDs
+    - language families
+    - capability profile
+    - allowed path hashes
+    - maximum file count
+    - maximum changed lines
+    - maximum operations
+    - limitation codes
+    - callback endpoint identity
+    - callback nonce
+  prohibited:
+    - raw logs
+    - source code
+    - repository files
+    - patches
+    - diffs
+    - credentials
+    - access tokens
+    - raw repository identity
+    - branch names
+    - commit messages
+    - developer identity
+    - absolute paths
+    - environment variables
+    - arbitrary CI-provider payloads
+proposal:
+  required:
+    - proposal ID
+    - request ID
+    - failure fingerprint
+    - snapshot identity hash
+    - proposal status
+    - remediation class
+    - bounded operations
+    - evidence rationale
+    - requested validation classes
+    - limitations
+    - callback signature
+  operation:
+    form: exact_text_replacement
+    path_identity: HMAC path token
+    required:
+      - operation ID
+      - path token
+      - expected file hash
+      - expected text hash
+      - replacement text
+      - replacement hash
+      - evidence identity hashes
+      - justification
+  prohibited:
+    - shell commands
+    - Git commands
+    - executable scripts
+    - binary patches
+    - unified diff
+    - repository-wide replacement
+    - path traversal
+    - protected-path targeting
+callback:
+  authentication:
+    algorithm: HMAC-SHA256
+    secret_source: L9_PR_REPAIR_CALLBACK_KEY
+  replay_protection:
+    required:
+      - request ID
+      - callback nonce
+      - proposal ID
+      - timestamp
+      - signature
+      - durable nonce consumption
+  timestamp_tolerance_seconds: 300
+conversion:
+  rule: >
+    A PR_Repair proposal may be converted into a Resolver remediation plan only
+    after identity binding, signature validation, replay validation, privacy
+    validation, path-token resolution, protected-path enforcement, operation
+    bounds, and replacement-hash verification succeed.
+failure_behavior:
+  invalid_signature: rejected
+  replay: rejected
+  expired_callback: rejected
+  privacy_violation: rejected
+  unknown_path_token: rejected
+  protected_path: rejected
+  bounds_exceeded: rejected
+  snapshot_mismatch: rejected
+  fingerprint_mismatch: rejected
+  malformed_proposal: rejected
+terminal_states:
+  - proposal_accepted
+  - proposal_rejected
+  - delegation_unsupported
+  - callback_timeout
+  - callback_invalid
+  - delegation_delivery_failed

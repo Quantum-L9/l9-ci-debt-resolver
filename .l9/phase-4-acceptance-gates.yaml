@@ -1,0 +1,44 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P4
+
+gates:
+
+  - id: p4-exact-revision
+    requirement: >
+      Local HEAD matches the validated remediation base revision.
+  - id: p4-exact-worktree
+    requirement: >
+      Working-tree changes exactly match remediation expected paths.
+  - id: p4-repair-branch
+    requirement: >
+      Branch name is deterministic and uses an approved resolver prefix.
+  - id: p4-protected-branch
+    requirement: >
+      Protected branches cannot be targeted.
+  - id: p4-push-authorization
+    requirement: >
+      Push requires explicit unexpired repository, remote, and branch scope.
+  - id: p4-non-force
+    requirement: >
+      Force push, deletion refspecs, tags, and wildcard refspecs are absent.
+  - id: p4-deterministic-commit
+    requirement: >
+      Commit metadata contains the failure fingerprint, classification,
+      remediation plan, and SDK validation result.
+  - id: p4-rerun
+    requirement: >
+      The provider rerun is dispatched and observed with bounded polling.
+  - id: p4-clean
+    requirement: >
+      Clean is emitted only after a successful completed rerun.
+  - id: p4-repeated-failure
+    requirement: >
+      A repeated failure fingerprint terminates the remediation loop.
+  - id: p4-attempt-limit
+    requirement: >
+      Fingerprint attempts cannot exceed the configured maximum.
+  - id: p4-no-merge
+    requirement: >
+      Automatic merge remains prohibited.

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/stack-frame/v1",
+  "title": "L9 Resolver Stack Frame",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "frame_id",
+    "path",
+    "line",
+    "column",
+    "symbol_hint",
+    "language_family",
+    "log_line_number",
+    "confidence",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.stack-frame/v1"
+    },
+    "frame_id": {
+      "type": "string",
+      "pattern": "^frame_[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "not": {
+        "pattern": "^(?:/|[A-Za-z]:\\\\|.*(?:^|/)\\.\\.(?:/|$))"
+      }
+    },
+    "line": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "column": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 1
+    },
+    "symbol_hint": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 1000
+    },
+    "language_family": {
+      "enum": [
+        "python",
+        "javascript_typescript",
+        "java_kotlin",
+        "go",
+        "rust",
+        "dotnet",
+        "generic"
+      ]
+    },
+    "log_line_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

@@ -1,0 +1,38 @@
+schema: l9.phase-acceptance-gates/v1
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P0
+gates:
+  - id: p0-installable
+    requirement: >
+      The Python package installs in editable mode with the development
+      dependency group.
+  - id: p0-canonical-identities
+    requirement: >
+      Identity generation is deterministic and insensitive to dictionary input
+      order.
+  - id: p0-typed-evidence
+    requirement: >
+      CI evidence has a strict typed representation and JSON Schema.
+  - id: p0-typed-classification
+    requirement: >
+      Failure classification has a strict typed representation and JSON Schema.
+  - id: p0-attempt-lifecycle
+    requirement: >
+      Attempt state transitions are explicit and illegal transitions fail.
+  - id: p0-terminal-states
+    requirement: >
+      Terminal states are enumerated and cannot transition further.
+  - id: p0-corpus-safety
+    requirement: >
+      Resolution events contain aggregate references and prohibit raw logs,
+      source content, patches, credentials, and paths.
+  - id: p0-no-private-dependencies
+    requirement: >
+      Resolver imports no private Intelligence, LSP, SDK, or PR_Repair modules.
+  - id: p0-no-remote-behavior
+    requirement: >
+      P0 performs no branch mutation, push, rerun, or merge.
+  - id: p0-p1-compatible
+    requirement: >
+      P1 can import CIRunEvidence, SchemaValidator, capability output, and the
+      CLI foundation without modification.

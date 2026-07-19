@@ -1,0 +1,67 @@
+schema: l9.resolver-validation-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P3
+  status: authoritative
+authority:
+  owner: Quantum-L9/l9-ci-sdk
+  contract: public_validation_gateway
+required_inputs:
+  - repository snapshot ID
+  - classification trace
+  - changed paths
+  - remediation class
+  - original failed command
+  - related tests
+  - applicable contracts
+required_plan_steps:
+  - original failure reproduction or equivalent
+  - affected contract validation
+  - targeted tests
+conditional_full_gate:
+  required_when:
+    - policy requires full gate
+    - change crosses package boundary
+    - change affects governance
+    - change affects schemas
+    - change affects dependency resolution
+    - graph delta exceeds targeted scope
+result_states:
+  - passed
+  - failed
+  - unavailable
+  - incomplete
+graph_delta:
+  required:
+    - before snapshot ID
+    - after working-tree digest
+    - changed paths
+    - changed package boundaries
+    - changed contract references
+    - changed dependency edges
+    - unexpected changed paths
+  rejection:
+    - unexpected changed paths
+    - unapproved package boundary changes
+    - unapproved contract changes
+    - unapproved dependency-edge changes
+transcript:
+  include:
+    - validation plan ID
+    - ordered step IDs
+    - command hashes
+    - exit codes
+    - duration buckets
+    - stdout hashes
+    - stderr hashes
+    - result
+    - limitations
+  exclude:
+    - credentials
+    - unredacted logs
+    - absolute paths
+    - source content
+success:
+  requirement: >
+    A remediation is successful only when the SDK validation result passes and
+    the local workspace transaction remains within the approved graph delta.

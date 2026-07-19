@@ -1,0 +1,343 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/intelligence-feedback-event/v1",
+  "title": "L9 Resolver Intelligence Feedback Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "idempotency_key",
+    "event_type",
+    "repository_pseudonym",
+    "provider",
+    "resolver_version",
+    "occurred_at",
+    "failure",
+    "resolution",
+    "validation",
+    "correlation",
+    "provenance",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.intelligence-feedback-event/v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^feedback_event_[0-9a-f]{64}$"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^feedback_idempotency_[0-9a-f]{64}$"
+    },
+    "event_type": {
+      "enum": [
+        "resolution_succeeded",
+        "repeated_failure",
+        "new_failure",
+        "attempt_limit_reached",
+        "remote_operation_failed",
+        "rerun_timeout",
+        "validation_failed",
+        "unsupported"
+      ]
+    },
+    "repository_pseudonym": {
+      "type": "string",
+      "pattern": "^repository_[0-9a-f]{64}$"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "resolver_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "failure": {
+      "$ref": "#/$defs/failure"
+    },
+    "resolution": {
+      "$ref": "#/$defs/resolution"
+    },
+    "validation": {
+      "$ref": "#/$defs/validation"
+    },
+    "correlation": {
+      "$ref": "#/$defs/correlation"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fingerprint",
+        "category",
+        "confidence_bucket",
+        "repeated",
+        "attempt_number",
+        "observed_fingerprint_changed"
+      ],
+      "properties": {
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^failure_[0-9a-f]{64}$"
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "confidence_bucket": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "very_high"
+          ]
+        },
+        "repeated": {
+          "type": "boolean"
+        },
+        "attempt_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "observed_fingerprint_changed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terminal_state",
+        "remediation_class",
+        "changed_file_count",
+        "changed_line_bucket",
+        "remote_push_performed",
+        "rerun_observed"
+      ],
+      "properties": {
+        "terminal_state": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "remediation_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 100
+        },
+        "changed_file_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "changed_line_bucket": {
+          "enum": [
+            "0",
+            "1_10",
+            "11_50",
+            "51_100",
+            "101_250",
+            "251_500",
+            "gt_500",
+            "unknown"
+          ]
+        },
+        "remote_push_performed": {
+          "type": "boolean"
+        },
+        "rerun_observed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "result_id_hash",
+        "step_count",
+        "duration_bucket",
+        "graph_delta_accepted"
+      ],
+      "properties": {
+        "result": {
+          "enum": [
+            "passed",
+            "failed",
+            "unavailable",
+            "incomplete",
+            "not_run"
+          ]
+        },
+        "result_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "step_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "duration_bucket": {
+          "enum": [
+            "lt_1s",
+            "1_10s",
+            "10_60s",
+            "1_5m",
+            "5_15m",
+            "gt_15m",
+            "unknown"
+          ]
+        },
+        "graph_delta_accepted": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_profile",
+        "finding_ids",
+        "contract_ids",
+        "language_families",
+        "entity_count",
+        "related_test_count"
+      ],
+      "properties": {
+        "capability_profile": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "uniqueItems": true
+        },
+        "finding_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "contract_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "language_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "uniqueItems": true
+        },
+        "entity_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000
+        },
+        "related_test_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100000
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id_hash",
+        "evidence_id_hashes",
+        "classification_id_hash",
+        "remediation_plan_id_hash",
+        "attempt_id_hash",
+        "rerun_id_hash"
+      ],
+      "properties": {
+        "snapshot_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "evidence_id_hashes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "uniqueItems": true
+        },
+        "classification_id_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "remediation_plan_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "attempt_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "rerun_id_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

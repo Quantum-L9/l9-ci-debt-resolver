@@ -1,0 +1,121 @@
+schema: l9.resolver-log-acquisition-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P1
+  status: authoritative
+authority:
+  primary: actual_failed_log
+  precedence:
+    - actual_failed_log
+    - failed_job_metadata
+    - SDK_repository_evidence
+    - historical_context
+  invariants:
+    - Job names alone cannot establish root cause.
+    - Missing logs cannot establish a clean result.
+    - Incomplete logs cannot authorize remediation.
+    - All retrieved logs must have cryptographic provenance.
+    - Raw logs must not be emitted to corpus consumers.
+providers:
+  github_actions:
+    run_endpoint: /repos/{owner}/{repo}/actions/runs/{run_id}
+    jobs_endpoint: /repos/{owner}/{repo}/actions/runs/{run_id}/jobs
+    job_logs_endpoint: /repos/{owner}/{repo}/actions/jobs/{job_id}/logs
+    authentication:
+      accepted:
+        - GITHUB_TOKEN
+        - GH_TOKEN
+      token_persistence: prohibited
+      token_logging: prohibited
+pagination:
+  page_size: 100
+  maximum_pages: 100
+  fail_on_limit: true
+retry:
+  maximum_attempts: 4
+  retryable_statuses:
+    - 408
+    - 425
+    - 429
+    - 500
+    - 502
+    - 503
+    - 504
+  exponential_backoff:
+    initial_seconds: 0.25
+    maximum_seconds: 4.0
+  retry_after:
+    honored: true
+    maximum_seconds: 30
+limits:
+  maximum_jobs_per_run: 1000
+  maximum_log_bytes_per_job: 52428800
+  maximum_total_log_bytes: 524288000
+  maximum_redacted_log_bytes_in_memory: 52428800
+completeness:
+  states:
+    - complete
+    - possibly_truncated
+    - truncated
+    - unavailable
+  unavailable_when:
+    - provider returns not found
+    - provider denies access
+    - response body is empty
+    - download fails after bounded retries
+  truncated_when:
+    - downloaded bytes exceed configured maximum
+    - explicit truncation marker is detected
+    - content length exceeds consumed bytes
+    - archive entry cannot be read completely
+  possibly_truncated_when:
+    - expected terminal markers are absent
+    - provider metadata is internally inconsistent
+    - an unknown log serialization is received
+redaction:
+  required_before:
+    - local durable persistence
+    - diagnostic output
+    - test fixture capture
+    - corpus event generation
+  removes:
+    - bearer credentials
+    - GitHub credentials
+    - cloud credentials
+    - private keys
+    - assignment-form secrets
+    - email addresses
+    - absolute Unix paths
+    - absolute Windows paths
+    - configured repository root
+  replacement_format: "[REDACTED:<CLASS>]"
+provenance:
+  required:
+    - provider
+    - API version
+    - repository reference
+    - run ID
+    - job ID
+    - retrieval ID
+    - retrieval timestamp
+    - HTTP ETag when available
+    - HTTP content length when available
+    - raw SHA-256
+    - redacted SHA-256
+    - raw byte count
+    - redacted byte count
+    - completeness assessment
+    - limitations
+failure_behavior:
+  no_failed_jobs:
+    terminal_state: clean
+    condition: run conclusion is successful and no failed jobs exist
+  failed_job_without_complete_log:
+    terminal_state: insufficient_log_evidence
+    remediation: prohibited
+  provider_failure:
+    terminal_state: remote_operation_failed
+    remediation: prohibited
+  partial_run_acquisition:
+    terminal_state: insufficient_log_evidence
+    remediation: prohibited

@@ -1,0 +1,46 @@
+schema: l9.resolver-feedback-privacy-policy/v1
+metadata:
+  phase: RESOLVER-P5
+  enforcement: fail_closed
+forbidden_key_fragments:
+  - token
+  - secret
+  - password
+  - credential
+  - authorization
+  - cookie
+  - source
+  - patch
+  - diff
+  - log
+  - stdout
+  - stderr
+  - branch
+  - commit_message
+  - actor
+  - developer
+  - email
+  - absolute_path
+  - repository_path
+  - environment
+forbidden_value_patterns:
+  - bearer_token
+  - github_token
+  - AWS_access_key
+  - private_key
+  - email_address
+  - IPv4_address
+  - IPv6_address
+  - URL_with_credentials
+  - Unix_absolute_path
+  - Windows_absolute_path
+  - multiline_source_like_content
+maximums:
+  total_event_bytes: 65536
+  string_length: 2000
+  array_items: 500
+  object_depth: 10
+failure_behavior:
+  event_construction: rejected
+  outbox_write: prohibited
+  delivery: prohibited

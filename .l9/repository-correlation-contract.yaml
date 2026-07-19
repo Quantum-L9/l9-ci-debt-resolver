@@ -1,0 +1,142 @@
+schema: l9.resolver-repository-correlation-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P2
+  status: authoritative
+authority:
+  CI_failure:
+    primary: actual_failed_log
+    secondary: failed_job_metadata
+  repository_semantics:
+    authority: Quantum-L9/l9-ci-sdk
+  historical_context:
+    may_support: true
+    may_override_current_logs: false
+SDK_boundary:
+  required_public_operations:
+    - open_repository_snapshot
+    - resolve_source_locations
+    - resolve_repository_entities
+    - find_related_tests
+    - find_applicable_contracts
+    - correlate_findings
+  canonical_identities:
+    owned_by_SDK:
+      - repository_snapshot_id
+      - evidence_id
+      - finding_id
+      - source_location_id
+      - repository_entity_id
+      - validation_plan_id
+      - validation_result_id
+  resolver_must_not:
+    - redefine SDK schema identities
+    - inspect private SDK internals
+    - synthesize canonical SDK finding IDs
+    - infer repository semantics from file names alone
+    - treat historical findings as current CI evidence
+input:
+  required:
+    - failed run identity
+    - failed job identity
+    - complete typed CI evidence
+    - redacted failed log
+    - repository revision
+  prohibitions:
+    - unredacted log persistence
+    - source-content persistence
+    - absolute-path persistence
+    - credentials
+stack_frames:
+  supported_families:
+    - python
+    - javascript_typescript
+    - java_kotlin
+    - go
+    - rust
+    - dotnet
+    - generic_compiler_location
+  output:
+    - normalized repository-relative path
+    - line
+    - column
+    - symbol hint
+    - language family
+    - log line number
+    - confidence
+    - limitations
+  protections:
+    - absolute paths are reduced to repository-relative candidates
+    - traversal segments are rejected
+    - paths outside the repository are excluded
+    - redaction placeholders are never interpreted as paths
+correlation:
+  required_outputs:
+    - repository_snapshot_id
+    - stack_frames
+    - repository_entities
+    - related_tests
+    - applicable_contracts
+    - correlated_findings
+    - unresolved_locations
+    - limitations
+  determinism:
+    - outputs are sorted by canonical identity
+    - duplicate locations are removed
+    - duplicate SDK entities are removed
+    - duplicate SDK findings are removed
+classification:
+  categories:
+    - configuration
+    - dependency
+    - compilation
+    - test_failure
+    - lint_failure
+    - type_failure
+    - generated_file_drift
+    - security_failure
+    - infrastructure
+    - unsupported
+  required_trace:
+    - classification_id
+    - failure_fingerprint
+    - category
+    - confidence
+    - evidence_ids
+    - matched_signals
+    - failed_command
+    - repository_snapshot_id
+    - affected_entities
+    - related_tests
+    - applicable_contracts
+    - correlated_finding_ids
+    - remediation_eligibility
+    - limitations
+  confidence_policy:
+    automatic_minimum: 0.90
+    approval_required_minimum: 0.70
+    below_approval_threshold: unsupported
+  safety:
+    infrastructure:
+      remediation_eligibility: unsupported
+    security_failure:
+      remediation_eligibility: approval_required
+    unsupported:
+      remediation_eligibility: unsupported
+    incomplete_evidence:
+      classification: prohibited
+      terminal_state: insufficient_log_evidence
+    conflicting_high_confidence_categories:
+      classification: unsupported
+      limitation: conflicting root-cause signals
+failure_behavior:
+  SDK_unavailable:
+    terminal_state: remote_operation_failed
+  SDK_snapshot_failure:
+    terminal_state: remote_operation_failed
+  no_resolved_entities:
+    classification_allowed: true
+    limitation_required: true
+  no_matching_root_cause:
+    category: unsupported
+    remediation_eligibility: unsupported

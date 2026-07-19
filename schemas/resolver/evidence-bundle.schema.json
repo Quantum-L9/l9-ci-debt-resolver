@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/evidence-bundle/v1",
+  "title": "L9 Resolver Evidence Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repository",
+    "revision",
+    "evidence",
+    "redacted_log",
+    "failed_job"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.evidence-bundle/v1"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 128
+    },
+    "evidence": {
+      "$ref": "l9://resolver/ci-run-evidence/v1"
+    },
+    "redacted_log": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 52428800
+    },
+    "failed_job": {
+      "$ref": "l9://resolver/failed-job/v1"
+    }
+  }
+}

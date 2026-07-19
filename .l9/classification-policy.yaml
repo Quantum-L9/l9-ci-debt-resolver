@@ -1,0 +1,39 @@
+schema: l9.resolver-classification-policy/v1
+metadata:
+  phase: RESOLVER-P2
+  authority: repository
+confidence:
+  automatic_minimum: 0.90
+  approval_required_minimum: 0.70
+signal_weights:
+  exact_failed_command: 0.20
+  explicit_tool_signature: 0.35
+  explicit_failure_marker: 0.20
+  resolved_repository_entity: 0.10
+  applicable_contract: 0.05
+  correlated_SDK_finding: 0.10
+caps:
+  no_explicit_tool_signature: 0.69
+  no_complete_runtime_log: 0.00
+  infrastructure: 0.89
+  conflicting_categories: 0.49
+automatic_categories:
+  - configuration
+  - dependency
+  - compilation
+  - test_failure
+  - lint_failure
+  - type_failure
+  - generated_file_drift
+approval_required_categories:
+  - security_failure
+unsupported_categories:
+  - infrastructure
+  - unsupported
+prohibitions:
+  - classification from job name alone
+  - classification from historical memory alone
+  - classification from incomplete logs
+  - automatic remediation of conflicting classifications
+  - automatic remediation of infrastructure failures
+  - automatic remediation of security policy failures

@@ -1,0 +1,97 @@
+schema: l9.resolver-remediation-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P3
+  status: authoritative
+authority:
+  classification:
+    source: RESOLVER-P2 classification trace
+  repository_semantics:
+    source: Quantum-L9/l9-ci-sdk
+  validation:
+    source: Quantum-L9/l9-ci-sdk
+eligibility:
+  automatic:
+    required:
+      - classification remediation eligibility is automatic
+      - classification confidence is at least 0.90
+      - complete failed-log evidence exists
+      - exact SDK repository snapshot exists
+      - every changed path maps to correlated evidence
+      - no protected path is touched
+      - bounded-change limits are satisfied
+  approval_required:
+    required:
+      - classification remediation eligibility is approval_required
+      - explicit approval token is present
+      - approval scope contains all changed paths
+      - approval has not expired
+  unsupported:
+    remediation: prohibited
+allowed_remediation_classes:
+  - configuration
+  - dependency
+  - bounded_source
+  - generated_file
+prohibited:
+  - disabling tests
+  - skipping tests
+  - weakening lint rules
+  - weakening security rules
+  - weakening governance
+  - commenting out failures
+  - broad refactoring
+  - deleting unrelated code
+  - protected branch mutation
+  - remote push
+  - automatic merge
+  - speculative multi-attempt mutation
+  - shell execution from untrusted patch data
+bounds:
+  maximum_changed_files: 10
+  maximum_changed_lines: 500
+  maximum_operations: 50
+  maximum_file_bytes: 5242880
+  maximum_total_replacement_bytes: 10485760
+protected_paths:
+  exact:
+    - .git
+    - .github/CODEOWNERS
+  prefixes:
+    - .git/
+    - .github/workflows/
+    - .l9/
+    - schemas/
+    - security/
+    - compliance/
+    - governance/
+  override:
+    allowed: false
+patch_preconditions:
+  - repository revision matches the classified snapshot revision
+  - target file is repository relative
+  - target file remains inside the workspace root
+  - target file hash matches expected hash
+  - expected text occurs exactly once
+  - replacement hash matches declared replacement hash
+transaction:
+  behavior:
+    - capture original bytes
+    - apply all changes in memory
+    - verify bounds before writing
+    - write atomically
+    - validate
+    - commit local transaction only after validation succeeds
+  rollback_when:
+    - patch precondition fails
+    - operation fails
+    - original failed command still fails
+    - targeted validation fails
+    - affected contract validation fails
+    - graph delta exceeds plan
+    - SDK full gate fails
+    - validation result is unavailable
+remote_behavior:
+  branch_creation: prohibited_in_P3
+  push: prohibited_in_P3
+  CI_rerun: prohibited_in_P3

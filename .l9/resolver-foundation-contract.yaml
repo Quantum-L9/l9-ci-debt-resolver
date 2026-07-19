@@ -1,0 +1,37 @@
+schema: l9.resolver-foundation-contract/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  phase: RESOLVER-P0
+  status: authoritative
+contracts:
+  CI_evidence:
+    schema: l9://resolver/ci-run-evidence/v1
+    typed_model: l9_debt_resolver.contracts.models.CIRunEvidence
+  classification:
+    schema: l9://resolver/ci-failure-classification/v1
+    typed_model: l9_debt_resolver.contracts.models.FailureClassification
+  attempt:
+    schema: l9://resolver/resolver-attempt/v1
+    typed_model: l9_debt_resolver.contracts.models.ResolverAttempt
+  terminal_state:
+    schema: l9://resolver/resolver-terminal-state/v1
+    typed_model: l9_debt_resolver.contracts.models.ResolverTerminalState
+  resolution_event:
+    schema: l9://resolver/resolution-event/v1
+    typed_model: l9_debt_resolver.contracts.models.ResolutionEvent
+determinism:
+  canonical_encoding:
+    format: UTF-8 JSON
+    keys: lexicographically_sorted
+    separators: compact
+    NaN: prohibited
+  identity:
+    algorithm: SHA-256
+    input: canonical_encoding
+    format: namespace_prefix_plus_lowercase_hex_digest
+security:
+  fail_closed: true
+  arbitrary_shell_execution: prohibited
+  automatic_merge: prohibited
+  raw_log_corpus_transmission: prohibited
+  source_content_corpus_transmission: prohibited

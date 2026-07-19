@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/resolution-event/v1",
+  "title": "L9 Resolver Corpus-Safe Resolution Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_id",
+    "event_version",
+    "repository_pseudonym",
+    "provider",
+    "failure_fingerprint",
+    "classification_category",
+    "terminal_state",
+    "attempt_number",
+    "evidence_id_hashes",
+    "finding_ids",
+    "contract_ids",
+    "changed_file_count",
+    "changed_line_bucket",
+    "validation_result",
+    "occurred_at",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.resolution-event/v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^resolution_event_[0-9a-f]{64}$"
+    },
+    "event_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "repository_pseudonym": {
+      "type": "string",
+      "pattern": "^repository_[0-9a-f]{64}$"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "failure_fingerprint": {
+      "type": "string",
+      "pattern": "^failure_[0-9a-f]{64}$"
+    },
+    "classification_category": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "terminal_state": {
+      "$ref": "l9://resolver/resolver-terminal-state/v1#/$defs/state"
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "evidence_id_hashes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "uniqueItems": true
+    },
+    "finding_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "uniqueItems": true
+    },
+    "contract_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "uniqueItems": true
+    },
+    "changed_file_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "changed_line_bucket": {
+      "enum": [
+        "0",
+        "1_10",
+        "11_50",
+        "51_100",
+        "101_250",
+        "251_500",
+        "gt_500",
+        "unknown"
+      ]
+    },
+    "validation_result": {
+      "enum": [
+        "passed",
+        "failed",
+        "unavailable",
+        "incomplete",
+        "not_run"
+      ]
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

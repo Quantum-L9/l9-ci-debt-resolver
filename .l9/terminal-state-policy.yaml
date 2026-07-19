@@ -1,0 +1,32 @@
+schema: l9.resolver-terminal-state-policy/v1
+precedence:
+  - attempt_limit_reached
+  - remote_operation_failed
+  - rerun_timeout
+  - repeated_failure
+  - new_failure
+  - validation_failed
+  - unsupported
+  - clean
+states:
+  clean:
+    condition:
+      - rerun completed
+      - rerun conclusion is success
+  repeated_failure:
+    condition:
+      - rerun completed unsuccessfully
+      - rerun failure fingerprint equals original fingerprint
+  new_failure:
+    condition:
+      - rerun completed unsuccessfully
+      - rerun failure fingerprint differs from original fingerprint
+  attempt_limit_reached:
+    condition:
+      - prior attempts for fingerprint reach configured maximum
+  remote_operation_failed:
+    condition:
+      - branch, commit, push, dispatch, or observation fails terminally
+  rerun_timeout:
+    condition:
+      - rerun does not complete before bounded timeout

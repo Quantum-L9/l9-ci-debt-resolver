@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/delegation-record/v1",
+  "title": "L9 Resolver Delegation Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_id",
+    "request",
+    "state",
+    "delivery_attempts",
+    "proposal_id",
+    "terminal_state",
+    "created_at",
+    "updated_at",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.delegation-record/v1"
+    },
+    "record_id": {
+      "type": "string",
+      "pattern": "^delegation_record_[0-9a-f]{64}$"
+    },
+    "request": {
+      "$ref": "l9://resolver/pr-repair-request/v1"
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "delivered",
+        "awaiting_callback",
+        "proposal_received",
+        "proposal_accepted",
+        "proposal_rejected",
+        "unsupported",
+        "dead_letter"
+      ]
+    },
+    "delivery_attempts": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "proposal_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "terminal_state": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

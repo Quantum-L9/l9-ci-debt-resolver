@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/repository-correlation/v1",
+  "title": "L9 Resolver Repository Correlation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "correlation_id",
+    "evidence_id",
+    "repository_snapshot_id",
+    "stack_frames",
+    "repository_entities",
+    "related_tests",
+    "applicable_contracts",
+    "correlated_findings",
+    "unresolved_locations",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.repository-correlation/v1"
+    },
+    "correlation_id": {
+      "type": "string",
+      "pattern": "^correlation_[0-9a-f]{64}$"
+    },
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^evidence_[0-9a-f]{64}$"
+    },
+    "repository_snapshot_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "stack_frames": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://resolver/stack-frame/v1"
+      }
+    },
+    "repository_entities": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/repository-entity/v1"
+      }
+    },
+    "related_tests": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/repository-entity/v1"
+      }
+    },
+    "applicable_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/contract-reference/v1"
+      }
+    },
+    "correlated_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/finding/v1"
+      }
+    },
+    "unresolved_locations": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://resolver/stack-frame/v1"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

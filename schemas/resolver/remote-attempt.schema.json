@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/remote-attempt/v1",
+  "title": "L9 Resolver Remote Attempt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "failure_fingerprint",
+    "attempt_number",
+    "repository",
+    "base_revision",
+    "branch",
+    "remote",
+    "commit_sha",
+    "original_run_id",
+    "rerun_id",
+    "status",
+    "started_at",
+    "completed_at",
+    "operations",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.remote-attempt/v1"
+    },
+    "attempt_id": {
+      "type": "string",
+      "pattern": "^remote_attempt_[0-9a-f]{64}$"
+    },
+    "failure_fingerprint": {
+      "type": "string",
+      "pattern": "^failure_[0-9a-f]{64}$"
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "base_revision": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 128
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "remote": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "commit_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "original_run_id": {
+      "type": "string"
+    },
+    "rerun_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "prepared",
+        "pushed",
+        "rerun_dispatched",
+        "observing",
+        "completed",
+        "failed"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation",
+          "result",
+          "observed_at",
+          "metadata"
+        ],
+        "properties": {
+          "operation": {
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "passed",
+              "failed",
+              "skipped"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

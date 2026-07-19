@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/resolver-attempt/v1",
+  "title": "L9 Resolver Attempt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "attempt_id",
+    "failure_fingerprint",
+    "attempt_number",
+    "state",
+    "evidence_ids",
+    "classification_id",
+    "remediation_plan_id",
+    "validation_result_id",
+    "original_run_id",
+    "rerun_id",
+    "created_at",
+    "updated_at",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.resolver-attempt/v1"
+    },
+    "attempt_id": {
+      "type": "string",
+      "pattern": "^attempt_[0-9a-f]{64}$"
+    },
+    "failure_fingerprint": {
+      "type": "string",
+      "pattern": "^failure_[0-9a-f]{64}$"
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "state": {
+      "$ref": "l9://resolver/resolver-terminal-state/v1#/$defs/state"
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "classification_id": {
+      "type": ["string", "null"]
+    },
+    "remediation_plan_id": {
+      "type": ["string", "null"]
+    },
+    "validation_result_id": {
+      "type": ["string", "null"]
+    },
+    "original_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rerun_id": {
+      "type": ["string", "null"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

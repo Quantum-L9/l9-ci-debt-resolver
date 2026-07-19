@@ -1,0 +1,51 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P2
+
+gates:
+
+  - id: p2-complete-evidence
+    requirement: >
+      Repository correlation and classification reject incomplete failed logs.
+  - id: p2-SDK-snapshot
+    requirement: >
+      Repository knowledge is obtained from an SDK-owned snapshot matching the
+      exact repository revision.
+  - id: p2-no-SDK-identity-generation
+    requirement: >
+      Resolver code does not generate canonical SDK snapshot, entity, contract,
+      finding, validation-plan, or validation-result identities.
+  - id: p2-safe-paths
+    requirement: >
+      Stack-frame paths are repository-relative, traversal-free, and exclude
+      redaction placeholders.
+  - id: p2-deterministic-correlation
+    requirement: >
+      Frames, entities, tests, contracts, findings, and unresolved locations
+      have deterministic ordering and deduplication.
+  - id: p2-related-tests
+    requirement: >
+      Related tests are requested through the public SDK knowledge boundary.
+  - id: p2-applicable-contracts
+    requirement: >
+      Applicable contracts are requested through the public SDK boundary.
+  - id: p2-canonical-findings
+    requirement: >
+      Correlated findings retain canonical SDK identities.
+  - id: p2-log-first-classification
+    requirement: >
+      Job names, historical memory, SDK metadata, and findings cannot classify
+      a root cause without current complete failed-log signals.
+  - id: p2-confidence
+    requirement: >
+      Automatic eligibility requires confidence of at least 0.90.
+  - id: p2-conflict
+    requirement: >
+      Conflicting high-confidence categories become unsupported.
+  - id: p2-infrastructure
+    requirement: >
+      Infrastructure failures are never automatically remediated.
+  - id: p2-no-mutation
+    requirement: >
+      RESOLVER-P2 contains no repository mutation or remote branch behavior.

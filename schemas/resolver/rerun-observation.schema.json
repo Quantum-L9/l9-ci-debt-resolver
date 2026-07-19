@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/rerun-observation/v1",
+  "title": "L9 Resolver Rerun Observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observation_id",
+    "provider",
+    "repository",
+    "original_run_id",
+    "rerun_id",
+    "status",
+    "conclusion",
+    "head_sha",
+    "started_at",
+    "completed_at",
+    "poll_count",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.rerun-observation/v1"
+    },
+    "observation_id": {
+      "type": "string",
+      "pattern": "^rerun_observation_[0-9a-f]{64}$"
+    },
+    "provider": {
+      "const": "github_actions"
+    },
+    "repository": {
+      "type": "string"
+    },
+    "original_run_id": {
+      "type": "string"
+    },
+    "rerun_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "conclusion": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "head_sha": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "poll_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

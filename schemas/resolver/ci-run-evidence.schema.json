@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/ci-run-evidence/v1",
+  "title": "L9 Resolver CI Run Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "provider",
+    "run_id",
+    "job_id",
+    "job_name",
+    "failed_command",
+    "conclusion",
+    "log_sha256",
+    "log_size_bytes",
+    "log_completeness",
+    "authority_class",
+    "artifact_provenance",
+    "observed_at",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.ci-run-evidence/v1"
+    },
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^evidence_[0-9a-f]{64}$"
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "job_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "failed_command": {
+      "type": ["string", "null"],
+      "maxLength": 2000
+    },
+    "conclusion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "log_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "log_size_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "log_completeness": {
+      "enum": [
+        "complete",
+        "possibly_truncated",
+        "truncated",
+        "unavailable"
+      ]
+    },
+    "authority_class": {
+      "enum": [
+        "RUNTIME_LOG",
+        "CI_RESULT",
+        "STATIC_ANALYZER",
+        "COMPILER_SEMANTIC",
+        "USER_ASSERTION"
+      ]
+    },
+    "artifact_provenance": {
+      "type": "object"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

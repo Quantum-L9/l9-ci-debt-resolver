@@ -1,0 +1,302 @@
+schema: l9.repo-spec/v1
+metadata:
+  repository: Quantum-L9/l9-ci-debt-resolver
+  repository_url: https://github.com/Quantum-L9/l9-ci-debt-resolver
+  spec_path: .l9/repo-spec.yaml
+  spec_version: 1.0.0
+  status: authoritative
+  phase: RESOLVER-P6
+  phase_name: pr_repair_delegation
+  last_converged: 2026-07-19
+identity:
+  name: l9-ci-debt-resolver
+  constellation_role: CI_failure_evidence_specialist
+  architectural_plane: failure_diagnosis_and_bounded_recovery
+  operating_model:
+    - evidence_first
+    - actual_CI_log_driven
+    - deterministic
+    - minimal_remediation
+    - fail_closed
+  mission: >
+    Retrieve actual failed CI evidence, classify root causes, correlate failures
+    with SDK repository knowledge, apply minimal evidence-supported remediation,
+    validate through SDK-owned contracts, observe CI reruns, and emit canonical
+    resolution events.
+ownership:
+  owns:
+    - failed CI run acquisition
+    - failed job retrieval
+    - failed log retrieval
+    - log completeness assessment
+    - CI-specific evidence extensions
+    - CI-specific root-cause classification
+    - resolver attempt lifecycle
+    - remediation lifecycle
+    - minimal evidence-bounded remediation
+    - approved repair-branch interaction
+    - CI rerun observation
+    - repeated-failure detection
+    - terminal-state handling
+    - corpus-safe resolver events
+  does_not_own:
+    - scanner-native parsing
+    - canonical SDK schema ownership
+    - canonical SDK finding identity
+    - repository semantic implementation
+    - fleet corpus storage
+    - historical corpus mining
+    - prevention compilation
+    - editor behavior
+    - broad speculative repair planning
+    - policy weakening
+    - automatic merge
+dependency_contract:
+  required:
+    - Quantum-L9/l9-ci-sdk
+  operational_integrations:
+    - GitHub Actions API
+    - Git
+  must_not_depend_on:
+    - Quantum-L9/l9-ci-debt-intelligence runtime internals
+    - Quantum-L9/l9-ci-debt-lsp
+    - Quantum-L9/PR_Repair internals
+  PR_Repair_relationship:
+    resolver_scope: specialized actual-CI-failure remediation
+    PR_Repair_scope: broad multi-source governed proposal generation
+    future_option: >
+      Complex approved repairs may be delegated through a public,
+      proposal-only contract.
+evidence_authority:
+  precedence:
+    - actual_failed_log
+    - failed_job_metadata
+    - SDK_repository_evidence
+    - historical_context
+  SDK_authority_classes:
+    - RUNTIME_LOG
+    - CI_RESULT
+    - STATIC_ANALYZER
+    - COMPILER_SEMANTIC
+    - USER_ASSERTION
+  prohibitions:
+    - Historical memory cannot override current failed logs.
+    - Job names alone cannot establish root cause.
+    - Missing logs cannot be treated as PASS.
+    - Incomplete logs cannot authorize remediation.
+    - Every remediation must reference evidence.
+    - Every limitation must remain visible.
+attempt_lifecycle:
+  initial_state: created
+  states:
+    - created
+    - evidence_acquired
+    - classified
+    - remediation_planned
+    - validating
+    - validated
+    - pushed
+    - observing
+    - clean
+    - insufficient_log_evidence
+    - unsupported
+    - validation_failed
+    - repeated_failure
+    - new_failure
+    - attempt_limit_reached
+    - remote_operation_failed
+    - rerun_timeout
+  terminal_states:
+    - clean
+    - insufficient_log_evidence
+    - unsupported
+    - validation_failed
+    - repeated_failure
+    - new_failure
+    - attempt_limit_reached
+    - remote_operation_failed
+    - rerun_timeout
+  transitions:
+    created:
+      - evidence_acquired
+      - insufficient_log_evidence
+      - remote_operation_failed
+    evidence_acquired:
+      - classified
+      - insufficient_log_evidence
+      - unsupported
+      - remote_operation_failed
+    classified:
+      - remediation_planned
+      - unsupported
+      - attempt_limit_reached
+    remediation_planned:
+      - validating
+      - validation_failed
+      - unsupported
+    validating:
+      - validated
+      - validation_failed
+      - remote_operation_failed
+    validated:
+      - pushed
+      - remote_operation_failed
+    pushed:
+      - observing
+      - remote_operation_failed
+    observing:
+      - clean
+      - repeated_failure
+      - new_failure
+      - rerun_timeout
+      - remote_operation_failed
+terminal_state_policy:
+  clean:
+    requires:
+      - completed CI rerun
+      - successful CI rerun conclusion
+  repeated_failure:
+    requires:
+      - completed unsuccessful rerun
+      - observed failure fingerprint equals original fingerprint
+  new_failure:
+    requires:
+      - completed unsuccessful rerun
+      - observed failure fingerprint differs from original fingerprint
+  insufficient_log_evidence:
+    requires:
+      - failed log unavailable, incomplete, or truncated
+  success_claim:
+    local_validation_only: prohibited
+    successful_push_only: prohibited
+    successful_rerun_required: true
+privacy:
+  corpus_safe_events:
+    include:
+      - provider
+      - repository pseudonym
+      - failure fingerprint
+      - classification category
+      - terminal state
+      - attempt number
+      - canonical SDK identity references
+      - aggregate remediation metrics
+      - hashed provenance
+      - limitations
+    exclude:
+      - raw CI logs
+      - source content
+      - patches
+      - diffs
+      - credentials
+      - developer identity
+      - absolute paths
+      - repository-relative paths
+      - branch names
+      - commit messages
+phases:
+  - phase: RESOLVER-P0
+    name: contract_alignment
+    priority: critical
+    status: implemented
+    deliverables:
+      - repository boundary
+      - typed CI evidence
+      - attempt lifecycle
+      - terminal states
+      - corpus-safe event contract
+  - phase: RESOLVER-P2
+    name: failed_log_acquisition
+    priority: critical
+    status: planned
+    deliverables:
+      - failed-run retrieval
+      - failed-job retrieval
+      - failed-log retrieval
+      - completeness assessment
+      - provenance and redaction
+  - phase: RESOLVER-P2
+    name: repository_correlation
+    priority: high
+    status: planned
+    deliverables:
+      - SDK Knowledge API
+      - stack-frame resolution
+      - related tests
+      - applicable contracts
+      - root-cause classification
+  - phase: RESOLVER-P3
+    name: bounded_validation
+    priority: high
+    status: planned
+    deliverables:
+      - bounded remediation
+      - SDK validation plans
+      - original failure reproduction
+      - graph-delta checks
+      - rollback
+  - phase: RESOLVER-P4
+    name: remote_loop
+    priority: high
+    status: implemented
+    deliverables:
+      - repair-branch safety
+      - authorized push
+      - rerun observation
+      - repeated-failure detection
+      - deterministic terminal states
+  - phase: RESOLVER-P5
+    name: intelligence_feedback
+    priority: medium
+    status: implemented
+    deliverables:
+      - privacy-safe resolution events
+      - repeated-failure telemetry
+      - idempotent delivery
+      - corpus-safe provenance
+  - phase: RESOLVER-P6
+    name: pr_repair_delegation
+    priority: medium
+    status: implemented
+    deliverables:
+      - proposal-only PR_Repair handoff
+      - bounded context
+      - callback verification
+      - retained Resolver authority
+adr_seeds:
+  - id: ADR-RESOLVER-001
+    title: Current CI logs are the primary failure authority
+    status: accepted
+  - id: ADR-RESOLVER-002
+    title: Repository semantics and validation remain SDK-owned
+    status: accepted
+  - id: ADR-RESOLVER-003
+    title: Resolver repairs are minimal and evidence-bounded
+    status: accepted
+  - id: ADR-RESOLVER-004
+    title: Repeated identical failures terminate
+    status: accepted
+  - id: ADR-RESOLVER-005
+    title: Resolver events are correction-versioned and corpus-safe
+    status: accepted
+acceptance_gates:
+  - id: resolver-log-first
+    requirement: >
+      No remediation begins before authoritative failed logs are retrieved and
+      their completeness is validated.
+  - id: resolver-evidence-trace
+    requirement: >
+      Every changed path and remediation operation traces to classified
+      evidence.
+  - id: resolver-bounded-change
+    requirement: >
+      Repair scope is no broader than demonstrated failure scope.
+  - id: resolver-shared-validation
+    requirement: >
+      SDK validation contracts replace bespoke test selection.
+  - id: resolver-rerun-proof
+    requirement: >
+      Clean is emitted only after a successful CI rerun.
+  - id: resolver-no-merge
+    requirement: >
+      Automatic merge remains prohibited.

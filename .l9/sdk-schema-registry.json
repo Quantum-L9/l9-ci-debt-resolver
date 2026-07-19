@@ -1,0 +1,22 @@
+{
+  "policy": {
+    "local_schema_copies_allowed": false,
+    "private_sdk_imports_allowed": false,
+    "unknown_sdk_contract_behavior": "reject"
+  },
+  "references": {
+    "contract-reference": {
+      "owner": "Quantum-L9/l9-ci-sdk",
+      "uri": "l9://sdk/contract-reference/v1"
+    },
+    "repository-entity": {
+      "owner": "Quantum-L9/l9-ci-sdk",
+      "uri": "l9://sdk/repository-entity/v1"
+    }
+  },
+  "schema": "l9.resolver-sdk-schema-registry/v1",
+  "sdk": {
+    "integration_contract": "l9.integration-contract/v1",
+    "repository": "Quantum-L9/l9-ci-sdk"
+  }
+}

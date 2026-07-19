@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/pr-repair-request/v1",
+  "title": "L9 Resolver PR Repair Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "idempotency_key",
+    "repository_pseudonym",
+    "failure_fingerprint",
+    "classification",
+    "repository_context",
+    "constraints",
+    "callback",
+    "created_at",
+    "expires_at",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.pr-repair-request/v1"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^pr_repair_request_[0-9a-f]{64}$"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "pattern": "^pr_repair_idempotency_[0-9a-f]{64}$"
+    },
+    "repository_pseudonym": {
+      "type": "string",
+      "pattern": "^repository_[0-9a-f]{64}$"
+    },
+    "failure_fingerprint": {
+      "type": "string",
+      "pattern": "^failure_[0-9a-f]{64}$"
+    },
+    "classification": {
+      "$ref": "#/$defs/classification"
+    },
+    "repository_context": {
+      "$ref": "#/$defs/repositoryContext"
+    },
+    "constraints": {
+      "$ref": "#/$defs/constraints"
+    },
+    "callback": {
+      "$ref": "#/$defs/callback"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 500
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "confidence_bucket",
+        "remediation_eligibility",
+        "failed_command_hash",
+        "normalized_error_signatures"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "confidence_bucket": {
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "very_high"
+          ]
+        },
+        "remediation_eligibility": {
+          "enum": [
+            "automatic",
+            "approval_required",
+            "unsupported"
+          ]
+        },
+        "failed_command_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "normalized_error_signatures": {
+          "type": "array",
+          "maxItems": 25,
+          "items": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "repositoryContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id_hash",
+        "entity_ids",
+        "finding_ids",
+        "contract_ids",
+        "related_test_ids",
+        "language_families",
+        "capability_profile",
+        "allowed_path_tokens"
+      ],
+      "properties": {
+        "snapshot_id_hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "entity_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "finding_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "contract_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "related_test_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "uniqueItems": true
+        },
+        "language_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "uniqueItems": true
+        },
+        "capability_profile": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "uniqueItems": true
+        },
+        "allowed_path_tokens": {
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string",
+            "pattern": "^path_[0-9a-f]{64}$"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maximum_changed_files",
+        "maximum_changed_lines",
+        "maximum_operations",
+        "allowed_remediation_classes",
+        "protected_paths_enforced",
+        "validation_required",
+        "remote_authority_granted"
+      ],
+      "properties": {
+        "maximum_changed_files": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "maximum_changed_lines": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "maximum_operations": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "allowed_remediation_classes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "configuration",
+              "dependency",
+              "bounded_source",
+              "generated_file"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "protected_paths_enforced": {
+          "const": true
+        },
+        "validation_required": {
+          "const": true
+        },
+        "remote_authority_granted": {
+          "const": false
+        }
+      }
+    },
+    "callback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "callback_id",
+        "nonce",
+        "signature_algorithm"
+      ],
+      "properties": {
+        "callback_id": {
+          "type": "string",
+          "pattern": "^callback_[0-9a-f]{64}$"
+        },
+        "nonce": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "signature_algorithm": {
+          "const": "HMAC-SHA256"
+        }
+      }
+    }
+  }
+}

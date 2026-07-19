@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/log-provenance/v1",
+  "title": "L9 Resolver Log Provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "provider",
+    "api_version",
+    "repository",
+    "run_id",
+    "job_id",
+    "retrieval_id",
+    "retrieved_at",
+    "etag",
+    "content_length",
+    "content_type",
+    "raw_sha256",
+    "redacted_sha256",
+    "raw_byte_count",
+    "redacted_byte_count",
+    "completeness",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.log-provenance/v1"
+    },
+    "provider": {
+      "const": "github_actions"
+    },
+    "api_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retrieval_id": {
+      "type": "string",
+      "pattern": "^retrieval_[0-9a-f]{64}$"
+    },
+    "retrieved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "etag": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "content_length": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "content_type": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 500
+    },
+    "raw_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "redacted_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "raw_byte_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "redacted_byte_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "completeness": {
+      "enum": [
+        "complete",
+        "possibly_truncated",
+        "truncated",
+        "unavailable"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

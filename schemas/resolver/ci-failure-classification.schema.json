@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/ci-failure-classification/v1",
+  "title": "L9 Resolver CI Failure Classification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "classification_id",
+    "failure_fingerprint",
+    "category",
+    "confidence",
+    "evidence_ids",
+    "failed_command",
+    "repository_snapshot_id",
+    "affected_entities",
+    "remediation_eligibility",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.ci-failure-classification/v1"
+    },
+    "classification_id": {
+      "type": "string",
+      "pattern": "^classification_[0-9a-f]{64}$"
+    },
+    "failure_fingerprint": {
+      "type": "string",
+      "pattern": "^failure_[0-9a-f]{64}$"
+    },
+    "category": {
+      "enum": [
+        "configuration",
+        "dependency",
+        "compilation",
+        "test_failure",
+        "lint_failure",
+        "type_failure",
+        "generated_file_drift",
+        "security_failure",
+        "infrastructure",
+        "unsupported"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "evidence_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^evidence_[0-9a-f]{64}$"
+      },
+      "uniqueItems": true
+    },
+    "failed_command": {
+      "type": ["string", "null"],
+      "maxLength": 2000
+    },
+    "repository_snapshot_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "affected_entities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "uniqueItems": true
+    },
+    "remediation_eligibility": {
+      "enum": [
+        "automatic",
+        "approval_required",
+        "unsupported"
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "uniqueItems": true
+    }
+  }
+}

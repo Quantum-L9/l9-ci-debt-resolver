@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/remediation-record/v1",
+  "title": "L9 Resolver Remediation Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "remediation_id",
+    "classification_id",
+    "failure_fingerprint",
+    "status",
+    "changed_paths",
+    "changed_line_count",
+    "validation_result_id",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.remediation-record/v1"
+    },
+    "remediation_id": {
+      "type": "string",
+      "pattern": "^remediation_[0-9a-f]{64}$"
+    },
+    "classification_id": {
+      "type": "string"
+    },
+    "failure_fingerprint": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "validating",
+        "validated",
+        "rolled_back",
+        "rejected"
+      ]
+    },
+    "changed_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "changed_line_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "validation_result_id": {
+      "type": ["string", "null"]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    }
+  }
+}

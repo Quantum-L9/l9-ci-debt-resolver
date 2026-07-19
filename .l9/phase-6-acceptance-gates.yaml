@@ -1,0 +1,52 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P6
+
+gates:
+
+  - id: p6-proposal-only
+    requirement: >
+      PR_Repair receives proposal-generation authority only.
+  - id: p6-bounded-context
+    requirement: >
+      Requests contain only bounded aggregate evidence and canonical identities.
+  - id: p6-no-raw-logs
+    requirement: >
+      Raw logs and log excerpts cannot enter delegation payloads.
+  - id: p6-no-source
+    requirement: >
+      Source files, source content, patches, and diffs cannot enter requests.
+  - id: p6-repository-pseudonym
+    requirement: >
+      Raw repository identity is replaced with an HMAC pseudonym.
+  - id: p6-path-token
+    requirement: >
+      Repository paths are represented only by HMAC path tokens.
+  - id: p6-signed-callback
+    requirement: >
+      Every proposal callback passes HMAC-SHA256 verification.
+  - id: p6-replay-protection
+    requirement: >
+      Callback nonces are durable and single-use.
+  - id: p6-identity-binding
+    requirement: >
+      Proposal request ID, fingerprint, snapshot, and nonce match the request.
+  - id: p6-scope
+    requirement: >
+      Proposal operations reference only Resolver-issued path tokens.
+  - id: p6-protected-paths
+    requirement: >
+      Token resolution re-applies normal protected-path policy.
+  - id: p6-bounds
+    requirement: >
+      File, line, operation, and replacement-byte limits remain enforced.
+  - id: p6-reentry
+    requirement: >
+      Accepted proposals become ordinary Resolver remediation plans and pass P3.
+  - id: p6-no-remote-authority
+    requirement: >
+      PR_Repair cannot commit, push, rerun, merge, or emit terminal states.
+  - id: p6-no-private-imports
+    requirement: >
+      Resolver does not import private PR_Repair implementation modules.

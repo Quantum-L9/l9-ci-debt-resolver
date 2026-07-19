@@ -1,0 +1,50 @@
+schema: l9.phase-acceptance-gates/v1
+
+repository: Quantum-L9/l9-ci-debt-resolver
+phase: RESOLVER-P3
+
+gates:
+
+  - id: p3-classification-bound
+    requirement: >
+      Every remediation plan matches the exact classification ID, failure
+      fingerprint, evidence IDs, and repository snapshot.
+  - id: p3-approval
+    requirement: >
+      Approval-required classifications cannot mutate the workspace without a
+      non-expired approval covering every changed path.
+  - id: p3-protected-path
+    requirement: >
+      Protected workflow, schema, governance, security, compliance, and
+      repository-control paths cannot be modified.
+  - id: p3-bounded-change
+    requirement: >
+      Remediation remains within file, operation, line, and byte limits.
+  - id: p3-exact-preconditions
+    requirement: >
+      Every patch operation verifies file hash, replacement hash, and a unique
+      expected-text match.
+  - id: p3-transaction
+    requirement: >
+      Workspace mutation is atomic and retains original bytes until validation
+      succeeds.
+  - id: p3-original-failure
+    requirement: >
+      The SDK validation plan includes the original failed command or an
+      equivalent reproduction.
+  - id: p3-targeted-tests
+    requirement: >
+      SDK-selected targeted tests are executed.
+  - id: p3-contract-validation
+    requirement: >
+      SDK-selected affected contracts are validated.
+  - id: p3-graph-delta
+    requirement: >
+      Unexpected paths, package boundaries, contracts, or dependency edges
+      reject the remediation.
+  - id: p3-rollback
+    requirement: >
+      Any patch or validation failure restores the original workspace.
+  - id: p3-no-remote
+    requirement: >
+      P3 cannot create branches, commit, push, merge, or observe CI reruns.

@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "l9://resolver/sdk-knowledge-document/v1",
+  "title": "L9 Resolver SDK Knowledge Exchange Document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repository",
+    "revision",
+    "snapshot",
+    "entities",
+    "tests",
+    "contracts",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "l9.sdk-knowledge-document/v1"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+    },
+    "revision": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 128
+    },
+    "snapshot": {
+      "$ref": "l9://sdk/repository-snapshot/v1"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/repository-entity/v1"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/repository-entity/v1"
+      }
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/contract-reference/v1"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "l9://sdk/finding/v1"
+      }
+    }
+  }
+}
