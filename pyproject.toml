@@ -7,7 +7,7 @@ version = "0.7.0"
 description = "Evidence-first CI failure diagnosis and bounded recovery"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = { text = "Proprietary" }
 authors = [
   { name = "Quantum-L9" }
 ]
