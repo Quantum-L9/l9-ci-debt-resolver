@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any
+
 from l9_debt_resolver.acquisition.errors import (
     RemoteResponseError,
 )
@@ -8,6 +10,7 @@ from l9_debt_resolver.acquisition.models import (
     FailedRun,
     FailedStep,
 )
+
 _FAILED_CONCLUSIONS = {
     "failure",
     "cancelled",
@@ -16,6 +19,8 @@ _FAILED_CONCLUSIONS = {
     "startup_failure",
     "stale",
 }
+
+
 def parse_run(
     document: dict[str, Any],
     *,
@@ -26,25 +31,17 @@ def parse_run(
     head_sha = document.get("head_sha")
     event = document.get("event")
     if run_id is None or not isinstance(status, str):
-        raise RemoteResponseError(
-            "GitHub run metadata is incomplete"
-        )
+        raise RemoteResponseError("GitHub run metadata is incomplete")
     if not isinstance(head_sha, str) or not head_sha:
-        raise RemoteResponseError(
-            "GitHub run lacks a head SHA"
-        )
+        raise RemoteResponseError("GitHub run lacks a head SHA")
     if not isinstance(event, str) or not event:
-        raise RemoteResponseError(
-            "GitHub run lacks an event"
-        )
+        raise RemoteResponseError("GitHub run lacks an event")
     conclusion = document.get("conclusion")
     if conclusion is not None and not isinstance(
         conclusion,
         str,
     ):
-        raise RemoteResponseError(
-            "GitHub run conclusion is invalid"
-        )
+        raise RemoteResponseError("GitHub run conclusion is invalid")
     workflow_id = document.get("workflow_id")
     return FailedRun(
         provider="github_actions",
@@ -54,18 +51,12 @@ def parse_run(
         conclusion=conclusion,
         head_sha=head_sha,
         event=event,
-        workflow_id=(
-            str(workflow_id)
-            if workflow_id is not None
-            else None
-        ),
-        created_at=_optional_string(
-            document.get("created_at")
-        ),
-        updated_at=_optional_string(
-            document.get("updated_at")
-        ),
+        workflow_id=(str(workflow_id) if workflow_id is not None else None),
+        created_at=_optional_string(document.get("created_at")),
+        updated_at=_optional_string(document.get("updated_at")),
     )
+
+
 def parse_failed_jobs(
     document: dict[str, Any],
     *,
@@ -73,35 +64,23 @@ def parse_failed_jobs(
 ) -> tuple[FailedJob, ...]:
     jobs = document.get("jobs")
     if not isinstance(jobs, list):
-        raise RemoteResponseError(
-            "GitHub jobs response lacks jobs"
-        )
+        raise RemoteResponseError("GitHub jobs response lacks jobs")
     parsed: list[FailedJob] = []
     for item in jobs:
         if not isinstance(item, dict):
-            raise RemoteResponseError(
-                "GitHub returned an invalid job"
-            )
+            raise RemoteResponseError("GitHub returned an invalid job")
         conclusion = item.get("conclusion")
         if conclusion not in _FAILED_CONCLUSIONS:
             continue
         job_id = item.get("id")
         name = item.get("name")
         status = item.get("status")
-        if (
-            job_id is None
-            or not isinstance(name, str)
-            or not isinstance(status, str)
-        ):
-            raise RemoteResponseError(
-                "GitHub failed-job metadata is incomplete"
-            )
+        if job_id is None or not isinstance(name, str) or not isinstance(status, str):
+            raise RemoteResponseError("GitHub failed-job metadata is incomplete")
         steps_value = item.get("steps", [])
         failed_steps: list[FailedStep] = []
         if not isinstance(steps_value, list):
-            raise RemoteResponseError(
-                "GitHub job steps are invalid"
-            )
+            raise RemoteResponseError("GitHub job steps are invalid")
         for step in steps_value:
             if not isinstance(step, dict):
                 continue
@@ -112,16 +91,8 @@ def parse_failed_jobs(
             step_name = step.get("name", "")
             failed_steps.append(
                 FailedStep(
-                    number=(
-                        int(number)
-                        if isinstance(number, int)
-                        else 0
-                    ),
-                    name=(
-                        step_name
-                        if isinstance(step_name, str)
-                        else ""
-                    ),
+                    number=(int(number) if isinstance(number, int) else 0),
+                    name=(step_name if isinstance(step_name, str) else ""),
                     conclusion=str(step_conclusion),
                 )
             )
@@ -134,23 +105,11 @@ def parse_failed_jobs(
                 name=name,
                 status=status,
                 conclusion=str(conclusion),
-                started_at=_optional_string(
-                    item.get("started_at")
-                ),
-                completed_at=_optional_string(
-                    item.get("completed_at")
-                ),
-                runner_name=_optional_string(
-                    item.get("runner_name")
-                ),
+                started_at=_optional_string(item.get("started_at")),
+                completed_at=_optional_string(item.get("completed_at")),
+                runner_name=_optional_string(item.get("runner_name")),
                 labels=tuple(
-                    sorted(
-                        {
-                            label
-                            for label in labels
-                            if isinstance(label, str)
-                        }
-                    )
+                    sorted({label for label in labels if isinstance(label, str)})
                 ),
                 failed_steps=tuple(
                     sorted(
@@ -172,5 +131,7 @@ def parse_failed_jobs(
             ),
         )
     )
+
+
 def _optional_string(value: object) -> str | None:
     return value if isinstance(value, str) else None

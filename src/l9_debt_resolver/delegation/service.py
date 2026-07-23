@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 import asyncio
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from .errors import (
     DelegationPermanentError,
     DelegationRetryableError,
@@ -12,11 +14,19 @@ from .models import (
     PRRepairRequest,
 )
 from .protocol import PRRepairTransport
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class PRRepairDelegationService:
     def __init__(
         self,
@@ -27,16 +37,13 @@ class PRRepairDelegationService:
     ) -> None:
         self._ledger = ledger
         self._transport = transport
-        self._maximum_attempts = (
-            maximum_attempts
-        )
+        self._maximum_attempts = maximum_attempts
+
     async def submit(
         self,
         request: PRRepairRequest,
     ) -> DelegationRecord:
-        record = self._ledger.create(
-            request
-        )
+        record = self._ledger.create(request)
         if record.state in {
             "delivered",
             "awaiting_callback",
@@ -46,17 +53,10 @@ class PRRepairDelegationService:
         }:
             return record
         current = record
-        while (
-            current.delivery_attempts
-            < self._maximum_attempts
-        ):
-            attempt = (
-                current.delivery_attempts + 1
-            )
+        while current.delivery_attempts < self._maximum_attempts:
+            attempt = current.delivery_attempts + 1
             try:
-                await self._transport.deliver(
-                    request
-                )
+                await self._transport.deliver(request)
                 current = replace(
                     current,
                     state="awaiting_callback",
@@ -70,9 +70,7 @@ class PRRepairDelegationService:
                     current,
                     state="dead_letter",
                     delivery_attempts=attempt,
-                    terminal_state=(
-                        "delegation_delivery_failed"
-                    ),
+                    terminal_state=("delegation_delivery_failed"),
                     updated_at=utc_now(),
                     limitations=tuple(
                         sorted(
@@ -91,9 +89,7 @@ class PRRepairDelegationService:
                         current,
                         state="dead_letter",
                         delivery_attempts=attempt,
-                        terminal_state=(
-                            "delegation_delivery_failed"
-                        ),
+                        terminal_state=("delegation_delivery_failed"),
                         updated_at=utc_now(),
                         limitations=tuple(
                             sorted(

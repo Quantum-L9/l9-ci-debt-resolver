@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import hashlib
+
 import pytest
+
 from l9_debt_resolver.acquisition.models import (
     FailedJob,
     FailedStep,
@@ -17,6 +20,8 @@ from l9_debt_resolver.correlation.service import (
 from l9_debt_resolver.sdk.document_adapter import (
     DocumentSDKKnowledgeProvider,
 )
+
+
 def bundle(completeness: str = "complete") -> EvidenceBundle:
     raw_hash = hashlib.sha256(b"log").hexdigest()
     evidence = CIRunEvidence(
@@ -70,6 +75,8 @@ def bundle(completeness: str = "complete") -> EvidenceBundle:
         ),
         failed_job=job,
     )
+
+
 def SDK_document() -> dict[str, object]:
     return {
         "schema_version": "l9.sdk-knowledge-document/v1",
@@ -91,25 +98,18 @@ def SDK_document() -> dict[str, object]:
                 "end_line": 100,
                 "symbol": "execute",
                 "language": "python",
-                "metadata": {
-                    "CI_failure_category": "test_failure"
-                },
+                "metadata": {"CI_failure_category": "test_failure"},
             }
         ],
         "tests": [],
         "contracts": [],
         "findings": [],
     }
+
+
 @pytest.mark.asyncio
 async def test_repository_correlation() -> None:
-    service = RepositoryCorrelationService(
-        DocumentSDKKnowledgeProvider(
-            SDK_document()
-        )
-    )
+    service = RepositoryCorrelationService(DocumentSDKKnowledgeProvider(SDK_document()))
     result = await service.correlate(bundle())
     assert result.repository_snapshot_id == "snapshot-1"
-    assert [
-        entity.entity_id
-        for entity in result.repository_entities
-    ] == ["entity-1"]
+    assert [entity.entity_id for entity in result.repository_entities] == ["entity-1"]

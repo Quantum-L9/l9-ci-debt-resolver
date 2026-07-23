@@ -1,9 +1,12 @@
 from __future__ import annotations
+
 from l9_debt_resolver.delegation.identity import (
     path_token,
     proposal_signature,
     verify_proposal_signature,
 )
+
+
 def test_path_tokens_are_deterministic() -> None:
     key = b"a" * 32
     first = path_token(
@@ -16,6 +19,8 @@ def test_path_tokens_are_deterministic() -> None:
     )
     assert first == second
     assert "src/app.py" not in first
+
+
 def test_proposal_signature_verifies() -> None:
     key = b"b" * 32
     document = {

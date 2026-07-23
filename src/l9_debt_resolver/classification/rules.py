@@ -1,12 +1,17 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import re
+from dataclasses import dataclass
+
+
 @dataclass(frozen=True)
 class ClassificationRule:
     name: str
     category: str
     weight: float
     pattern: re.Pattern[str]
+
+
 RULES = (
     ClassificationRule(
         "pytest_failure",
@@ -57,10 +62,7 @@ RULES = (
         ),
     ),
     ClassificationRule(
-        "typescript_compile",
-        "type_failure",
-        0.45,
-        re.compile(r"(?im)\berror TS\d{4}:")
+        "typescript_compile", "type_failure", 0.45, re.compile(r"(?im)\berror TS\d{4}:")
     ),
     ClassificationRule(
         "mypy_failure",
@@ -75,9 +77,7 @@ RULES = (
         "pyright_failure",
         "type_failure",
         0.45,
-        re.compile(
-            r"(?im)\b\d+\s+errors?,\s+\d+\s+warnings?"
-        ),
+        re.compile(r"(?im)\b\d+\s+errors?,\s+\d+\s+warnings?"),
     ),
     ClassificationRule(
         "ruff_failure",
@@ -192,8 +192,10 @@ COMMAND_RULES = (
         "compilation",
     ),
     (
-        re.compile(r"(?i)\b(?:pip install|npm install|npm ci|"
-                   r"pnpm install|yarn install|cargo fetch)\b"),
+        re.compile(
+            r"(?i)\b(?:pip install|npm install|npm ci|"
+            r"pnpm install|yarn install|cargo fetch)\b"
+        ),
         "dependency",
     ),
 )

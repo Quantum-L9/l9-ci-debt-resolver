@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/l9_debt_resolver"
 PROHIBITED = (
@@ -13,6 +15,8 @@ PROHIBITED = (
     "l9_debt_intelligence.internal",
     "l9_debt_intelligence.private",
 )
+
+
 def test_feedback_runtime_has_no_prohibited_payload_fields() -> None:
     feedback = SOURCE / "feedback"
     exemptions = {
@@ -21,24 +25,15 @@ def test_feedback_runtime_has_no_prohibited_payload_fields() -> None:
     for path in feedback.rglob("*.py"):
         if path.name in exemptions:
             continue
-        content = path.read_text(
-            encoding="utf-8"
-        ).lower()
+        content = path.read_text(encoding="utf-8").lower()
         for term in PROHIBITED:
             assert term not in content, (
-                f"{path} contains prohibited feedback "
-                f"term {term}"
+                f"{path} contains prohibited feedback term {term}"
             )
+
+
 def test_no_private_intelligence_imports() -> None:
     for path in SOURCE.rglob("*.py"):
-        content = path.read_text(
-            encoding="utf-8"
-        ).lower()
-        assert (
-            "l9_debt_intelligence.internal"
-            not in content
-        )
-        assert (
-            "l9_debt_intelligence.private"
-            not in content
-        )
+        content = path.read_text(encoding="utf-8").lower()
+        assert "l9_debt_intelligence.internal" not in content
+        assert "l9_debt_intelligence.private" not in content

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from datetime import datetime, timezone
-from typing import Any
+
+from datetime import UTC, datetime
+
 from l9_debt_resolver.classification.models import (
     ClassificationTrace,
 )
@@ -10,6 +11,7 @@ from l9_debt_resolver.correlation.models import (
 from l9_debt_resolver.resolution.models import (
     ResolutionOutcome,
 )
+
 from .identity import (
     feedback_event_id,
     idempotency_key,
@@ -18,6 +20,7 @@ from .identity import (
 )
 from .models import FeedbackEvent
 from .privacy import validate_feedback_event
+
 TERMINAL_EVENT_TYPES = {
     "clean": "resolution_succeeded",
     "repeated_failure": "repeated_failure",
@@ -28,11 +31,19 @@ TERMINAL_EVENT_TYPES = {
     "validation_failed": "validation_failed",
     "unsupported": "unsupported",
 }
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 def build_feedback_event(
     *,
     repository: str,
@@ -53,9 +64,7 @@ def build_feedback_event(
     graph_delta_accepted: bool | None,
     remediation_plan_id: str | None,
 ) -> FeedbackEvent:
-    classification = (
-        classification_trace.classification
-    )
+    classification = classification_trace.classification
     event_type = TERMINAL_EVENT_TYPES.get(
         resolution_outcome.terminal_state,
         "unsupported",
@@ -64,179 +73,86 @@ def build_feedback_event(
         repository=repository,
         pseudonym_key=pseudonym_key,
     )
-    observed = (
-        resolution_outcome
-        .observed_failure_fingerprint
-    )
+    observed = resolution_outcome.observed_failure_fingerprint
     identity_material = {
         "repository_pseudonym": repository_id,
-        "failure_fingerprint": (
-            classification.failure_fingerprint
-        ),
+        "failure_fingerprint": (classification.failure_fingerprint),
         "attempt_number": attempt_number,
-        "terminal_state": (
-            resolution_outcome.terminal_state
-        ),
-        "rerun_id_hash": stable_hash(
-            resolution_outcome.rerun_id
-        ),
-        "validation_result_id_hash": stable_hash(
-            validation_result_id
-        ),
+        "terminal_state": (resolution_outcome.terminal_state),
+        "rerun_id_hash": stable_hash(resolution_outcome.rerun_id),
+        "validation_result_id_hash": stable_hash(validation_result_id),
     }
-    event_id = feedback_event_id(
-        identity_material
-    )
+    event_id = feedback_event_id(identity_material)
     event = FeedbackEvent(
         event_id=event_id,
-        idempotency_key=idempotency_key(
-            identity_material
-        ),
+        idempotency_key=idempotency_key(identity_material),
         event_type=event_type,
         repository_pseudonym=repository_id,
         provider=provider,
         resolver_version=resolver_version,
         occurred_at=utc_now(),
         failure={
-            "fingerprint": (
-                classification.failure_fingerprint
-            ),
+            "fingerprint": (classification.failure_fingerprint),
             "category": classification.category,
-            "confidence_bucket": _confidence_bucket(
-                classification.confidence
-            ),
-            "repeated": (
-                resolution_outcome.terminal_state
-                == "repeated_failure"
-            ),
+            "confidence_bucket": _confidence_bucket(classification.confidence),
+            "repeated": (resolution_outcome.terminal_state == "repeated_failure"),
             "attempt_number": attempt_number,
             "observed_fingerprint_changed": (
                 None
                 if observed is None
-                else observed
-                != classification.failure_fingerprint
+                else observed != classification.failure_fingerprint
             ),
         },
         resolution={
-            "terminal_state": (
-                resolution_outcome.terminal_state
-            ),
+            "terminal_state": (resolution_outcome.terminal_state),
             "remediation_class": remediation_class,
             "changed_file_count": max(
                 0,
                 changed_file_count,
             ),
-            "changed_line_bucket": (
-                _changed_line_bucket(
-                    changed_line_count
-                )
-            ),
-            "remote_push_performed": (
-                resolution_outcome.commit_sha
-                is not None
-            ),
-            "rerun_observed": (
-                resolution_outcome.rerun_id
-                is not None
-            ),
+            "changed_line_bucket": (_changed_line_bucket(changed_line_count)),
+            "remote_push_performed": (resolution_outcome.commit_sha is not None),
+            "rerun_observed": (resolution_outcome.rerun_id is not None),
         },
         validation={
             "result": validation_result,
-            "result_id_hash": stable_hash(
-                validation_result_id
-            ),
+            "result_id_hash": stable_hash(validation_result_id),
             "step_count": max(
                 0,
                 validation_step_count,
             ),
-            "duration_bucket": (
-                validation_duration_bucket
-            ),
-            "graph_delta_accepted": (
-                graph_delta_accepted
-            ),
+            "duration_bucket": (validation_duration_bucket),
+            "graph_delta_accepted": (graph_delta_accepted),
         },
         correlation={
-            "capability_profile": list(
-                sorted(
-                    set(
-                        correlation
-                        .capability_profile
-                    )
-                )
-            ),
+            "capability_profile": list(sorted(set(correlation.capability_profile))),
             "finding_ids": list(
-                sorted(
-                    {
-                        reference.id
-                        for reference in (
-                            correlation
-                            .finding_references
-                        )
-                    }
-                )
+                sorted({reference.id for reference in (correlation.finding_references)})
             ),
             "contract_ids": list(
                 sorted(
-                    {
-                        reference.id
-                        for reference in (
-                            correlation
-                            .contract_references
-                        )
-                    }
+                    {reference.id for reference in (correlation.contract_references)}
                 )
             ),
             "language_families": list(
-                sorted(
-                    {
-                        frame.framework
-                        for frame in (
-                            correlation.stack_frames
-                        )
-                    }
-                )
+                sorted({frame.framework for frame in (correlation.stack_frames)})
             ),
-            "entity_count": len(
-                correlation.entity_references
-            ),
-            "related_test_count": len(
-                correlation
-                .related_test_references
-            ),
+            "entity_count": len(correlation.entity_references),
+            "related_test_count": len(correlation.related_test_references),
         },
         provenance={
-            "snapshot_id_hash": stable_hash(
-                correlation
-                .repository_snapshot_id
-            ),
+            "snapshot_id_hash": stable_hash(correlation.repository_snapshot_id),
             "evidence_id_hashes": list(
                 sorted(
                     stable_hash(value)
-                    for value in (
-                        classification.evidence_ids
-                    )
-                    if stable_hash(value)
-                    is not None
+                    for value in (classification.evidence_ids)
+                    if stable_hash(value) is not None
                 )
             ),
-            "classification_id_hash": (
-                stable_hash(
-                    classification
-                    .classification_id
-                )
-            ),
-            "remediation_plan_id_hash": (
-                stable_hash(
-                    remediation_plan_id
-                )
-            ),
-            "attempt_id_hash": stable_hash(
-                resolution_outcome.attempt_id
-            ),
-            "rerun_id_hash": stable_hash(
-                resolution_outcome.rerun_id
-            ),
+            "classification_id_hash": (stable_hash(classification.classification_id)),
+            "remediation_plan_id_hash": (stable_hash(remediation_plan_id)),
+            "attempt_id_hash": stable_hash(resolution_outcome.attempt_id),
+            "rerun_id_hash": stable_hash(resolution_outcome.rerun_id),
         },
         limitations=tuple(
             sorted(
@@ -251,6 +167,8 @@ def build_feedback_event(
     document = event.as_dict()
     validate_feedback_event(document)
     return event
+
+
 def _confidence_bucket(
     confidence: float,
 ) -> str:
@@ -261,6 +179,8 @@ def _confidence_bucket(
     if confidence >= 0.70:
         return "medium"
     return "low"
+
+
 def _changed_line_bucket(
     count: int | None,
 ) -> str:

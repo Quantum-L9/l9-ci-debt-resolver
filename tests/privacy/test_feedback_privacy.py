@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 import pytest
+
 from l9_debt_resolver.feedback.errors import (
     FeedbackPrivacyError,
 )
 from l9_debt_resolver.feedback.privacy import (
     validate_feedback_event,
 )
+
+
 @pytest.mark.parametrize(
     "document",
     [
@@ -21,17 +25,15 @@ from l9_debt_resolver.feedback.privacy import (
 def test_sensitive_feedback_is_rejected(
     document: dict[str, object],
 ) -> None:
-    with pytest.raises(
-        FeedbackPrivacyError
-    ):
+    with pytest.raises(FeedbackPrivacyError):
         validate_feedback_event(document)
+
+
 def test_safe_aggregate_feedback_is_allowed() -> None:
     validate_feedback_event(
         {
             "event_type": "repeated_failure",
             "changed_file_count": 2,
-            "failure_fingerprint": (
-                "failure_" + "a" * 64
-            ),
+            "failure_fingerprint": ("failure_" + "a" * 64),
         }
     )

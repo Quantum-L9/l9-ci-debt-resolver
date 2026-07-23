@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import asyncio
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
+
 from l9_debt_resolver.acquisition.config import (
     AcquisitionConfig,
 )
@@ -12,13 +14,22 @@ from l9_debt_resolver.contracts.canonical import (
 from l9_debt_resolver.providers.github.transport import (
     GitHubTransport,
 )
+
 from .errors import RerunTimeoutError
 from .models import RerunObservation
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class GitHubRerunProvider:
     def __init__(
         self,
@@ -33,6 +44,7 @@ class GitHubRerunProvider:
             config=self._config,
             base_url=base_url,
         )
+
     async def dispatch_failed_jobs(
         self,
         *,
@@ -45,6 +57,7 @@ class GitHubRerunProvider:
             f"/actions/runs/{quote(run_id)}"
             f"/rerun-failed-jobs"
         )
+
     async def observe(
         self,
         *,
@@ -55,9 +68,7 @@ class GitHubRerunProvider:
         poll_interval_seconds: float = 10,
     ) -> RerunObservation:
         started_at = utc_now()
-        deadline = asyncio.get_running_loop().time() + (
-            timeout_seconds
-        )
+        deadline = asyncio.get_running_loop().time() + (timeout_seconds)
         poll_count = 0
         latest: dict[str, Any] | None = None
         while True:
@@ -71,12 +82,8 @@ class GitHubRerunProvider:
                 if candidate.get("status") == "completed":
                     break
             if asyncio.get_running_loop().time() >= deadline:
-                raise RerunTimeoutError(
-                    "CI rerun observation exceeded timeout"
-                )
-            await asyncio.sleep(
-                poll_interval_seconds
-            )
+                raise RerunTimeoutError("CI rerun observation exceeded timeout")
+            await asyncio.sleep(poll_interval_seconds)
         rerun_id = str(latest["id"])
         completed_at = utc_now()
         return RerunObservation(
@@ -87,9 +94,7 @@ class GitHubRerunProvider:
                     "original_run_id": original_run_id,
                     "rerun_id": rerun_id,
                     "head_sha": expected_head_sha,
-                    "conclusion": latest.get(
-                        "conclusion"
-                    ),
+                    "conclusion": latest.get("conclusion"),
                 },
             ),
             provider="github_actions",
@@ -99,8 +104,7 @@ class GitHubRerunProvider:
             status=str(latest["status"]),
             conclusion=(
                 str(latest["conclusion"])
-                if latest.get("conclusion")
-                is not None
+                if latest.get("conclusion") is not None
                 else None
             ),
             head_sha=expected_head_sha,
@@ -109,6 +113,7 @@ class GitHubRerunProvider:
             poll_count=poll_count,
             limitations=(),
         )
+
     async def _latest_run_for_sha(
         self,
         *,
@@ -128,10 +133,7 @@ class GitHubRerunProvider:
         candidates = [
             run
             for run in runs
-            if (
-                isinstance(run, dict)
-                and run.get("head_sha") == head_sha
-            )
+            if (isinstance(run, dict) and run.get("head_sha") == head_sha)
         ]
         if not candidates:
             return None
@@ -143,6 +145,7 @@ class GitHubRerunProvider:
             reverse=True,
         )
         return candidates[0]
+
     async def _post_empty(
         self,
         path: str,
@@ -150,24 +153,20 @@ class GitHubRerunProvider:
         import json
         from urllib.error import HTTPError
         from urllib.request import Request, urlopen
+
         request = Request(
             self._transport._base_url + path,
             method="POST",
             data=json.dumps({}).encode("utf-8"),
             headers={
                 "Accept": "application/vnd.github+json",
-                "Authorization": (
-                    f"Bearer {self._transport._token}"
-                ),
-                "User-Agent": (
-                    self._config.user_agent
-                ),
-                "X-GitHub-Api-Version": (
-                    self._config.api_version
-                ),
+                "Authorization": (f"Bearer {self._transport._token}"),
+                "User-Agent": (self._config.user_agent),
+                "X-GitHub-Api-Version": (self._config.api_version),
                 "Content-Type": "application/json",
             },
         )
+
         def invoke() -> None:
             try:
                 with urlopen(
@@ -179,21 +178,19 @@ class GitHubRerunProvider:
                         202,
                         204,
                     }:
-                        raise RuntimeError(
-                            "unexpected rerun response"
-                        )
+                        raise RuntimeError("unexpected rerun response")
             except HTTPError as error:
                 raise RuntimeError(
-                    f"rerun dispatch failed with HTTP "
-                    f"{error.code}"
+                    f"rerun dispatch failed with HTTP {error.code}"
                 ) from error
+
         await asyncio.to_thread(invoke)
+
+
 def _repository_parts(
     repository: str,
 ) -> tuple[str, str]:
     parts = repository.split("/")
     if len(parts) != 2 or not all(parts):
-        raise ValueError(
-            "repository must use owner/name format"
-        )
+        raise ValueError("repository must use owner/name format")
     return parts[0], parts[1]

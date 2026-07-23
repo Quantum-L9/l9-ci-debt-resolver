@@ -1,12 +1,17 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import pytest
+
 from l9_debt_resolver.validation.models import (
     ValidationStep,
 )
 from l9_debt_resolver.validation.runner import (
     ValidationCommandRunner,
 )
+
+
 @pytest.mark.asyncio
 async def test_allowed_command_executes(
     tmp_path: Path,
@@ -27,6 +32,8 @@ async def test_allowed_command_executes(
     )
     assert result.result == "passed"
     assert result.exit_code == 0
+
+
 @pytest.mark.asyncio
 async def test_unapproved_executable_is_rejected(
     tmp_path: Path,

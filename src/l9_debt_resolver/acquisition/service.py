@@ -1,21 +1,31 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from typing import Protocol
+
 from l9_debt_resolver.contracts.canonical import (
     namespaced_identity,
 )
-from l9_debt_resolver.contracts.models import CIRunEvidence
+
 from .models import (
     AcquiredLog,
     AcquisitionReport,
     FailedJob,
     FailedRun,
 )
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class AcquisitionProvider(Protocol):
     async def identify_failed_run(
         self,
@@ -24,6 +34,7 @@ class AcquisitionProvider(Protocol):
         run_id: str,
     ) -> FailedRun:
         """Retrieve provider run metadata."""
+
     async def retrieve_failed_jobs(
         self,
         *,
@@ -31,6 +42,7 @@ class AcquisitionProvider(Protocol):
         run_id: str,
     ) -> tuple[FailedJob, ...]:
         """Retrieve all failed jobs."""
+
     async def retrieve_failed_log(
         self,
         *,
@@ -39,6 +51,8 @@ class AcquisitionProvider(Protocol):
         job: FailedJob,
     ) -> AcquiredLog:
         """Retrieve and sanitize one failed job log."""
+
+
 class FailedLogAcquisitionService:
     def __init__(
         self,
@@ -48,6 +62,7 @@ class FailedLogAcquisitionService:
     ) -> None:
         self._provider = provider
         self._clock = clock
+
     async def acquire(
         self,
         *,
@@ -65,9 +80,7 @@ class FailedLogAcquisitionService:
         )
         if not jobs:
             terminal_state = (
-                "clean"
-                if run.conclusion == "success"
-                else "insufficient_log_evidence"
+                "clean" if run.conclusion == "success" else "insufficient_log_evidence"
             )
             completed_at = self._clock()
             return AcquisitionReport(
@@ -93,10 +106,7 @@ class FailedLogAcquisitionService:
                 limitations=(
                     ()
                     if terminal_state == "clean"
-                    else (
-                        "failed run contained no retrievable "
-                        "failed jobs",
-                    )
+                    else ("failed run contained no retrievable failed jobs",)
                 ),
             )
         acquired: list[AcquiredLog] = []
@@ -110,10 +120,7 @@ class FailedLogAcquisitionService:
             )
         evidence = tuple(
             sorted(
-                (
-                    item.evidence
-                    for item in acquired
-                ),
+                (item.evidence for item in acquired),
                 key=lambda item: (
                     item.run_id,
                     item.job_id,
@@ -121,22 +128,13 @@ class FailedLogAcquisitionService:
                 ),
             )
         )
-        complete_count = sum(
-            item.log_completeness == "complete"
-            for item in evidence
-        )
+        complete_count = sum(item.log_completeness == "complete" for item in evidence)
         all_complete = complete_count == len(jobs)
         limitations = sorted(
-            {
-                limitation
-                for item in evidence
-                for limitation in item.limitations
-            }
+            {limitation for item in evidence for limitation in item.limitations}
         )
         if not all_complete:
-            limitations.append(
-                "one or more failed jobs lack complete logs"
-            )
+            limitations.append("one or more failed jobs lack complete logs")
         completed_at = self._clock()
         return AcquisitionReport(
             acquisition_id=namespaced_identity(
@@ -144,10 +142,7 @@ class FailedLogAcquisitionService:
                 {
                     "repository": repository,
                     "run_id": run_id,
-                    "evidence_ids": [
-                        item.evidence_id
-                        for item in evidence
-                    ],
+                    "evidence_ids": [item.evidence_id for item in evidence],
                 },
             ),
             provider=run.provider,
@@ -157,14 +152,9 @@ class FailedLogAcquisitionService:
             run_conclusion=run.conclusion,
             failed_job_count=len(jobs),
             evidence=evidence,
-            total_raw_bytes=sum(
-                item.provenance.raw_byte_count
-                for item in acquired
-            ),
+            total_raw_bytes=sum(item.provenance.raw_byte_count for item in acquired),
             terminal_state=(
-                "evidence_ready"
-                if all_complete
-                else "insufficient_log_evidence"
+                "evidence_ready" if all_complete else "insufficient_log_evidence"
             ),
             started_at=started_at,
             completed_at=completed_at,

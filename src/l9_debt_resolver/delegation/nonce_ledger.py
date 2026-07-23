@@ -1,9 +1,13 @@
 from __future__ import annotations
+
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 from .errors import DelegationReplayError
+
+
 class CallbackNonceLedger:
     def __init__(
         self,
@@ -11,6 +15,7 @@ class CallbackNonceLedger:
         path: Path,
     ) -> None:
         self._path = path
+
     def consume(
         self,
         *,
@@ -25,29 +30,21 @@ class CallbackNonceLedger:
         )
         key = f"{request_id}:{nonce}"
         if key in consumed:
-            raise DelegationReplayError(
-                "callback nonce has already been consumed"
-            )
+            raise DelegationReplayError("callback nonce has already been consumed")
         consumed[key] = proposal_id
         self._write(document)
+
     def _load(self) -> dict[str, object]:
         if not self._path.exists():
             return {
-                "schema_version": (
-                    "l9.callback-nonce-ledger/v1"
-                ),
+                "schema_version": ("l9.callback-nonce-ledger/v1"),
                 "consumed": {},
             }
-        value = json.loads(
-            self._path.read_text(
-                encoding="utf-8"
-            )
-        )
+        value = json.loads(self._path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
-            raise ValueError(
-                "callback nonce ledger must be an object"
-            )
+            raise ValueError("callback nonce ledger must be an object")
         return value
+
     def _write(
         self,
         value: dict[str, object],

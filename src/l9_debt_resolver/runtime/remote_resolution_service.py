@@ -1,6 +1,8 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from pathlib import Path
+
 from l9_debt_resolver.classification.models import (
     ClassificationTrace,
 )
@@ -25,11 +27,19 @@ from l9_debt_resolver.resolution.models import (
 from l9_debt_resolver.resolution.terminal import (
     determine_terminal_state,
 )
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class RemoteResolutionService:
     def __init__(
         self,
@@ -39,6 +49,7 @@ class RemoteResolutionService:
     ) -> None:
         self._rerun_provider = rerun_provider
         self._ledger = attempt_ledger
+
     async def execute(
         self,
         *,
@@ -52,23 +63,15 @@ class RemoteResolutionService:
         base_revision: str,
         expected_changed_paths: tuple[str, ...],
         push_authorization: PushAuthorization,
-        observed_failure_fingerprint: (
-            str | None
-        ) = None,
+        observed_failure_fingerprint: (str | None) = None,
     ) -> tuple[
         RemoteAttempt,
         ResolutionOutcome,
     ]:
-        classification = (
-            classification_trace.classification
-        )
-        attempt_number = self._ledger.next_attempt(
-            classification.failure_fingerprint
-        )
+        classification = classification_trace.classification
+        attempt_number = self._ledger.next_attempt(classification.failure_fingerprint)
         branch = deterministic_branch_name(
-            failure_fingerprint=(
-                classification.failure_fingerprint
-            ),
+            failure_fingerprint=(classification.failure_fingerprint),
             attempt_number=attempt_number,
         )
         validate_branch_name(branch)
@@ -80,25 +83,15 @@ class RemoteResolutionService:
         )
         started_at = utc_now()
         operations = []
-        repository_adapter = GitRepository(
-            workspace_root=workspace_root
-        )
-        await repository_adapter.verify_revision(
-            base_revision
-        )
-        await repository_adapter.verify_expected_changes(
-            expected_changed_paths
-        )
+        repository_adapter = GitRepository(workspace_root=workspace_root)
+        await repository_adapter.verify_revision(base_revision)
+        await repository_adapter.verify_expected_changes(expected_changed_paths)
         operations.append(
             RemoteOperationRecord(
                 operation="verify_workspace",
                 result="passed",
                 observed_at=utc_now(),
-                metadata={
-                    "changed_paths": list(
-                        expected_changed_paths
-                    )
-                },
+                metadata={"changed_paths": list(expected_changed_paths)},
             )
         )
         await repository_adapter.create_branch(branch)
@@ -110,9 +103,7 @@ class RemoteResolutionService:
                 metadata={"branch": branch},
             )
         )
-        await repository_adapter.stage_paths(
-            expected_changed_paths
-        )
+        await repository_adapter.stage_paths(expected_changed_paths)
         commit_message = (
             "RESOLVER-P4 bounded remediation\n\n"
             f"Failure-Fingerprint: "
@@ -188,9 +179,7 @@ class RemoteResolutionService:
         attempt_id = namespaced_identity(
             "remote_attempt_",
             {
-                "failure_fingerprint": (
-                    classification.failure_fingerprint
-                ),
+                "failure_fingerprint": (classification.failure_fingerprint),
                 "attempt_number": attempt_number,
                 "repository": repository,
                 "branch": branch,
@@ -201,9 +190,7 @@ class RemoteResolutionService:
         )
         attempt = RemoteAttempt(
             attempt_id=attempt_id,
-            failure_fingerprint=(
-                classification.failure_fingerprint
-            ),
+            failure_fingerprint=(classification.failure_fingerprint),
             attempt_number=attempt_number,
             repository=repository,
             base_revision=base_revision,
@@ -220,12 +207,8 @@ class RemoteResolutionService:
         )
         terminal_state = determine_terminal_state(
             rerun_conclusion=observation.conclusion,
-            original_fingerprint=(
-                classification.failure_fingerprint
-            ),
-            observed_fingerprint=(
-                observed_failure_fingerprint
-            ),
+            original_fingerprint=(classification.failure_fingerprint),
+            observed_fingerprint=(observed_failure_fingerprint),
         )
         outcome = ResolutionOutcome(
             outcome_id=namespaced_identity(
@@ -233,31 +216,21 @@ class RemoteResolutionService:
                 {
                     "attempt_id": attempt_id,
                     "terminal_state": terminal_state,
-                    "original_fingerprint": (
-                        classification.failure_fingerprint
-                    ),
-                    "observed_fingerprint": (
-                        observed_failure_fingerprint
-                    ),
+                    "original_fingerprint": (classification.failure_fingerprint),
+                    "observed_fingerprint": (observed_failure_fingerprint),
                     "rerun_id": observation.rerun_id,
                 },
             ),
             attempt_id=attempt_id,
             terminal_state=terminal_state,
-            original_failure_fingerprint=(
-                classification.failure_fingerprint
-            ),
-            observed_failure_fingerprint=(
-                observed_failure_fingerprint
-            ),
+            original_failure_fingerprint=(classification.failure_fingerprint),
+            observed_failure_fingerprint=(observed_failure_fingerprint),
             repository=repository,
             branch=branch,
             commit_sha=commit_sha,
             original_run_id=original_run_id,
             rerun_id=observation.rerun_id,
-            evidence_ids=(
-                classification.evidence_ids
-            ),
+            evidence_ids=(classification.evidence_ids),
             limitations=observation.limitations,
         )
         return attempt, outcome

@@ -1,12 +1,11 @@
 from __future__ import annotations
+
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+
 from l9_debt_resolver.classification.models import (
     ClassificationTrace,
-)
-from l9_debt_resolver.remediation.models import (
-    RemediationPlan,
 )
 from l9_debt_resolver.delegation.converter import (
     convert_proposal_to_remediation_plan,
@@ -24,11 +23,22 @@ from l9_debt_resolver.delegation.nonce_ledger import (
 from l9_debt_resolver.delegation.proposal import (
     validate_proposal_contract,
 )
+from l9_debt_resolver.remediation.models import (
+    RemediationPlan,
+)
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class DelegationCallbackService:
     def __init__(
         self,
@@ -38,6 +48,7 @@ class DelegationCallbackService:
     ) -> None:
         self._ledger = ledger
         self._nonce_ledger = nonce_ledger
+
     def accept_proposal(
         self,
         *,
@@ -58,9 +69,7 @@ class DelegationCallbackService:
             request=record.request,
             proposal=proposal,
             callback_key=callback_key,
-            repository_snapshot_id=(
-                repository_snapshot_id
-            ),
+            repository_snapshot_id=(repository_snapshot_id),
         )
         self._nonce_ledger.consume(
             request_id=proposal.request_id,
@@ -72,9 +81,7 @@ class DelegationCallbackService:
                 record,
                 state="unsupported",
                 proposal_id=proposal.proposal_id,
-                terminal_state=(
-                    "delegation_unsupported"
-                ),
+                terminal_state=("delegation_unsupported"),
                 updated_at=utc_now(),
                 limitations=tuple(
                     sorted(
@@ -87,25 +94,15 @@ class DelegationCallbackService:
             )
             self._ledger.save(updated)
             return updated, None
-        remediation_plan = (
-            convert_proposal_to_remediation_plan(
-                workspace_root=workspace_root,
-                request=record.request,
-                proposal=proposal,
-                path_token_map=path_token_map,
-                classification_trace=(
-                    classification_trace
-                ),
-                repository_snapshot_id=(
-                    repository_snapshot_id
-                ),
-                repository_revision=(
-                    repository_revision
-                ),
-                validation_plan_id=(
-                    validation_plan_id
-                ),
-            )
+        remediation_plan = convert_proposal_to_remediation_plan(
+            workspace_root=workspace_root,
+            request=record.request,
+            proposal=proposal,
+            path_token_map=path_token_map,
+            classification_trace=(classification_trace),
+            repository_snapshot_id=(repository_snapshot_id),
+            repository_revision=(repository_revision),
+            validation_plan_id=(validation_plan_id),
         )
         updated = replace(
             record,

@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 import pytest
+
 from l9_debt_resolver.delegation.errors import (
     DelegationPrivacyError,
 )
 from l9_debt_resolver.delegation.privacy import (
     validate_request,
 )
+
+
 @pytest.mark.parametrize(
     "document",
     [
@@ -21,19 +25,15 @@ from l9_debt_resolver.delegation.privacy import (
 def test_sensitive_request_is_rejected(
     document: dict[str, object],
 ) -> None:
-    with pytest.raises(
-        DelegationPrivacyError
-    ):
+    with pytest.raises(DelegationPrivacyError):
         validate_request(document)
+
+
 def test_bounded_aggregate_request_is_allowed() -> None:
     validate_request(
         {
-            "failure_fingerprint": (
-                "failure_" + "a" * 64
-            ),
+            "failure_fingerprint": ("failure_" + "a" * 64),
             "entity_ids": ["entity:1"],
-            "allowed_path_tokens": [
-                "path_" + "b" * 64
-            ],
+            "allowed_path_tokens": ["path_" + "b" * 64],
         }
     )

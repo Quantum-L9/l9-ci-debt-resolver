@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 from l9_debt_resolver.providers.github.parser import (
     parse_failed_jobs,
     parse_run,
 )
+
+
 def test_parse_run() -> None:
     run = parse_run(
         {
@@ -19,6 +22,8 @@ def test_parse_run() -> None:
     )
     assert run.run_id == "100"
     assert run.conclusion == "failure"
+
+
 def test_only_failed_jobs_are_returned() -> None:
     jobs = parse_failed_jobs(
         {

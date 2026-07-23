@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any
+
 from .errors import (
     AttemptTransitionError,
     TerminalStateError,
 )
+
+
 class ResolverState(StrEnum):
     CREATED = "created"
     EVIDENCE_ACQUIRED = "evidence_acquired"
@@ -24,6 +28,8 @@ class ResolverState(StrEnum):
     ATTEMPT_LIMIT_REACHED = "attempt_limit_reached"
     REMOTE_OPERATION_FAILED = "remote_operation_failed"
     RERUN_TIMEOUT = "rerun_timeout"
+
+
 TERMINAL_STATES = frozenset(
     {
         ResolverState.CLEAN,
@@ -99,6 +105,8 @@ ALLOWED_TRANSITIONS: dict[
         }
     ),
 }
+
+
 @dataclass(frozen=True)
 class CIRunEvidence:
     evidence_id: str
@@ -115,20 +123,17 @@ class CIRunEvidence:
     artifact_provenance: dict[str, Any]
     observed_at: str
     limitations: tuple[str, ...]
+
     def __post_init__(self) -> None:
         if self.log_size_bytes < 0:
-            raise ValueError(
-                "log_size_bytes cannot be negative"
-            )
+            raise ValueError("log_size_bytes cannot be negative")
         if self.log_completeness not in {
             "complete",
             "possibly_truncated",
             "truncated",
             "unavailable",
         }:
-            raise ValueError(
-                "unsupported log completeness state"
-            )
+            raise ValueError("unsupported log completeness state")
         if self.authority_class not in {
             "RUNTIME_LOG",
             "CI_RESULT",
@@ -136,9 +141,8 @@ class CIRunEvidence:
             "COMPILER_SEMANTIC",
             "USER_ASSERTION",
         }:
-            raise ValueError(
-                "unsupported evidence authority class"
-            )
+            raise ValueError("unsupported evidence authority class")
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.ci-run-evidence/v1",
@@ -157,6 +161,8 @@ class CIRunEvidence:
             "observed_at": self.observed_at,
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class FailureClassification:
     classification_id: str
@@ -169,62 +175,50 @@ class FailureClassification:
     affected_entities: tuple[str, ...]
     remediation_eligibility: str
     limitations: tuple[str, ...]
+
     def __post_init__(self) -> None:
         if not 0 <= self.confidence <= 1:
-            raise ValueError(
-                "classification confidence must be between 0 and 1"
-            )
+            raise ValueError("classification confidence must be between 0 and 1")
         if not self.evidence_ids:
-            raise ValueError(
-                "classification requires at least one evidence ID"
-            )
+            raise ValueError("classification requires at least one evidence ID")
         if self.remediation_eligibility not in {
             "automatic",
             "approval_required",
             "unsupported",
         }:
-            raise ValueError(
-                "unsupported remediation eligibility"
-            )
+            raise ValueError("unsupported remediation eligibility")
+
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema_version": (
-                "l9.ci-failure-classification/v1"
-            ),
+            "schema_version": ("l9.ci-failure-classification/v1"),
             "classification_id": self.classification_id,
-            "failure_fingerprint": (
-                self.failure_fingerprint
-            ),
+            "failure_fingerprint": (self.failure_fingerprint),
             "category": self.category,
             "confidence": self.confidence,
             "evidence_ids": list(self.evidence_ids),
             "failed_command": self.failed_command,
-            "repository_snapshot_id": (
-                self.repository_snapshot_id
-            ),
-            "affected_entities": list(
-                self.affected_entities
-            ),
-            "remediation_eligibility": (
-                self.remediation_eligibility
-            ),
+            "repository_snapshot_id": (self.repository_snapshot_id),
+            "affected_entities": list(self.affected_entities),
+            "remediation_eligibility": (self.remediation_eligibility),
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class ResolverTerminalState:
     state: ResolverState
+
     def __post_init__(self) -> None:
         if self.state not in TERMINAL_STATES:
-            raise TerminalStateError(
-                f"state is not terminal: {self.state}"
-            )
+            raise TerminalStateError(f"state is not terminal: {self.state}")
+
     def as_dict(self) -> dict[str, str]:
         return {
-            "schema_version": (
-                "l9.resolver-terminal-state/v1"
-            ),
+            "schema_version": ("l9.resolver-terminal-state/v1"),
             "state": self.state.value,
         }
+
+
 @dataclass(frozen=True)
 class ResolverAttempt:
     attempt_id: str
@@ -240,14 +234,15 @@ class ResolverAttempt:
     created_at: str
     updated_at: str
     limitations: tuple[str, ...]
+
     def __post_init__(self) -> None:
         if self.attempt_number < 1:
-            raise ValueError(
-                "attempt_number must be positive"
-            )
+            raise ValueError("attempt_number must be positive")
+
     @property
     def terminal(self) -> bool:
         return self.state in TERMINAL_STATES
+
     def transition(
         self,
         target: ResolverState,
@@ -289,11 +284,7 @@ class ResolverAttempt:
                 if validation_result_id is not None
                 else self.validation_result_id
             ),
-            rerun_id=(
-                rerun_id
-                if rerun_id is not None
-                else self.rerun_id
-            ),
+            rerun_id=(rerun_id if rerun_id is not None else self.rerun_id),
             updated_at=updated_at,
             limitations=tuple(
                 sorted(
@@ -304,29 +295,26 @@ class ResolverAttempt:
                 )
             ),
         )
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.resolver-attempt/v1",
             "attempt_id": self.attempt_id,
-            "failure_fingerprint": (
-                self.failure_fingerprint
-            ),
+            "failure_fingerprint": (self.failure_fingerprint),
             "attempt_number": self.attempt_number,
             "state": self.state.value,
             "evidence_ids": list(self.evidence_ids),
             "classification_id": self.classification_id,
-            "remediation_plan_id": (
-                self.remediation_plan_id
-            ),
-            "validation_result_id": (
-                self.validation_result_id
-            ),
+            "remediation_plan_id": (self.remediation_plan_id),
+            "validation_result_id": (self.validation_result_id),
             "original_run_id": self.original_run_id,
             "rerun_id": self.rerun_id,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class ResolutionEvent:
     event_id: str
@@ -345,54 +333,34 @@ class ResolutionEvent:
     validation_result: str
     occurred_at: str
     limitations: tuple[str, ...]
+
     def __post_init__(self) -> None:
         if self.terminal_state not in TERMINAL_STATES:
-            raise TerminalStateError(
-                "resolution event requires a terminal state"
-            )
+            raise TerminalStateError("resolution event requires a terminal state")
         if self.event_version < 1:
-            raise ValueError(
-                "event_version must be positive"
-            )
+            raise ValueError("event_version must be positive")
         if self.attempt_number < 1:
-            raise ValueError(
-                "attempt_number must be positive"
-            )
+            raise ValueError("attempt_number must be positive")
         if self.changed_file_count < 0:
-            raise ValueError(
-                "changed_file_count cannot be negative"
-            )
+            raise ValueError("changed_file_count cannot be negative")
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.resolution-event/v1",
             "event_id": self.event_id,
             "event_version": self.event_version,
-            "repository_pseudonym": (
-                self.repository_pseudonym
-            ),
+            "repository_pseudonym": (self.repository_pseudonym),
             "provider": self.provider,
-            "failure_fingerprint": (
-                self.failure_fingerprint
-            ),
-            "classification_category": (
-                self.classification_category
-            ),
+            "failure_fingerprint": (self.failure_fingerprint),
+            "classification_category": (self.classification_category),
             "terminal_state": self.terminal_state.value,
             "attempt_number": self.attempt_number,
-            "evidence_id_hashes": list(
-                self.evidence_id_hashes
-            ),
+            "evidence_id_hashes": list(self.evidence_id_hashes),
             "finding_ids": list(self.finding_ids),
             "contract_ids": list(self.contract_ids),
-            "changed_file_count": (
-                self.changed_file_count
-            ),
-            "changed_line_bucket": (
-                self.changed_line_bucket
-            ),
-            "validation_result": (
-                self.validation_result
-            ),
+            "changed_file_count": (self.changed_file_count),
+            "changed_line_bucket": (self.changed_line_bucket),
+            "validation_result": (self.validation_result),
             "occurred_at": self.occurred_at,
             "limitations": list(self.limitations),
         }

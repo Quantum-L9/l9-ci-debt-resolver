@@ -1,14 +1,18 @@
 from __future__ import annotations
-import asyncio
-from pathlib import Path
+
 import subprocess
+from pathlib import Path
+
 import pytest
+
 from l9_debt_resolver.remote.errors import (
     DirtyWorkspaceError,
 )
 from l9_debt_resolver.remote.git import (
     GitRepository,
 )
+
+
 def run(
     root: Path,
     *arguments: str,
@@ -19,6 +23,8 @@ def run(
         check=True,
         capture_output=True,
     )
+
+
 @pytest.mark.asyncio
 async def test_expected_changes_are_enforced(
     tmp_path: Path,
@@ -52,15 +58,7 @@ async def test_expected_changes_are_enforced(
         "after\n",
         encoding="utf-8",
     )
-    repository = GitRepository(
-        workspace_root=tmp_path
-    )
-    await repository.verify_expected_changes(
-        ("app.py",)
-    )
-    with pytest.raises(
-        DirtyWorkspaceError
-    ):
-        await repository.verify_expected_changes(
-            ("other.py",)
-        )
+    repository = GitRepository(workspace_root=tmp_path)
+    await repository.verify_expected_changes(("app.py",))
+    with pytest.raises(DirtyWorkspaceError):
+        await repository.verify_expected_changes(("other.py",))

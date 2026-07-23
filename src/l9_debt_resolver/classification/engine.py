@@ -1,6 +1,8 @@
 from __future__ import annotations
-from collections import defaultdict
+
 import re
+from collections import defaultdict
+
 from l9_debt_resolver.contracts.canonical import (
     namespaced_identity,
 )
@@ -8,14 +10,18 @@ from l9_debt_resolver.correlation.models import (
     EvidenceBundle,
     RepositoryCorrelation,
 )
+
 from .models import (
     ClassificationSignal,
     ClassificationTrace,
 )
 from .rules import COMMAND_RULES, RULES
+
+
 class RootCauseClassifier:
     AUTOMATIC_MINIMUM = 0.90
     APPROVAL_MINIMUM = 0.70
+
     async def classify(
         self,
         *,
@@ -23,9 +29,7 @@ class RootCauseClassifier:
         correlation: RepositoryCorrelation,
     ) -> ClassificationTrace:
         if bundle.evidence.log_completeness != "complete":
-            raise ValueError(
-                "classification requires complete runtime-log evidence"
-            )
+            raise ValueError("classification requires complete runtime-log evidence")
         signals = self._collect_signals(
             bundle=bundle,
             correlation=correlation,
@@ -37,9 +41,7 @@ class RootCauseClassifier:
         if not category_scores:
             category = "unsupported"
             confidence = 0.0
-            limitations.add(
-                "no supported root-cause signal was detected"
-            )
+            limitations.add("no supported root-cause signal was detected")
         else:
             ranked = sorted(
                 category_scores.items(),
@@ -57,19 +59,13 @@ class RootCauseClassifier:
             ):
                 category = "unsupported"
                 confidence = min(confidence, 0.49)
-                limitations.add(
-                    "conflicting high-confidence root-cause signals"
-                )
-        explicit_log_signal = any(
-            signal.source == "failed_log"
-            for signal in signals
-        )
+                limitations.add("conflicting high-confidence root-cause signals")
+        explicit_log_signal = any(signal.source == "failed_log" for signal in signals)
         if not explicit_log_signal and category != "unsupported":
             category = "unsupported"
             confidence = min(confidence, 0.49)
             limitations.add(
-                "classification lacks an explicit failed-log "
-                "tool signature"
+                "classification lacks an explicit failed-log tool signature"
             )
         if category == "infrastructure":
             confidence = min(confidence, 0.89)
@@ -85,26 +81,18 @@ class RootCauseClassifier:
         else:
             eligibility = "unsupported"
         affected_entities = tuple(
-            entity.entity_id
-            for entity in correlation.repository_entities
+            entity.entity_id for entity in correlation.repository_entities
         )
-        related_tests = tuple(
-            entity.entity_id
-            for entity in correlation.related_tests
-        )
+        related_tests = tuple(entity.entity_id for entity in correlation.related_tests)
         applicable_contracts = tuple(
-            contract.contract_id
-            for contract in correlation.applicable_contracts
+            contract.contract_id for contract in correlation.applicable_contracts
         )
         finding_ids = tuple(
-            finding.finding_id
-            for finding in correlation.correlated_findings
+            finding.finding_id for finding in correlation.correlated_findings
         )
         fingerprint_material = {
             "category": category,
-            "failed_command": _normalize_command(
-                bundle.evidence.failed_command
-            ),
+            "failed_command": _normalize_command(bundle.evidence.failed_command),
             "log_hash": bundle.evidence.log_sha256,
             "entity_ids": list(affected_entities),
             "contract_ids": list(applicable_contracts),
@@ -116,13 +104,8 @@ class RootCauseClassifier:
         )
         classification_material = {
             "failure_fingerprint": failure_fingerprint,
-            "snapshot_id": (
-                correlation.repository_snapshot_id
-            ),
-            "signals": [
-                signal.as_dict()
-                for signal in signals
-            ],
+            "snapshot_id": (correlation.repository_snapshot_id),
+            "signals": [signal.as_dict() for signal in signals],
             "confidence": round(confidence, 4),
             "eligibility": eligibility,
         }
@@ -134,14 +117,10 @@ class RootCauseClassifier:
             failure_fingerprint=failure_fingerprint,
             category=category,
             confidence=round(confidence, 4),
-            evidence_ids=(
-                bundle.evidence.evidence_id,
-            ),
+            evidence_ids=(bundle.evidence.evidence_id,),
             matched_signals=signals,
             failed_command=bundle.evidence.failed_command,
-            repository_snapshot_id=(
-                correlation.repository_snapshot_id
-            ),
+            repository_snapshot_id=(correlation.repository_snapshot_id),
             affected_entities=affected_entities,
             related_tests=related_tests,
             applicable_contracts=applicable_contracts,
@@ -149,6 +128,7 @@ class RootCauseClassifier:
             remediation_eligibility=eligibility,
             limitations=tuple(sorted(limitations)),
         )
+
     def _collect_signals(
         self,
         *,
@@ -179,8 +159,7 @@ class RootCauseClassifier:
                 )
         if correlation.repository_entities:
             entity_categories = _metadata_categories(
-                entity.metadata
-                for entity in correlation.repository_entities
+                entity.metadata for entity in correlation.repository_entities
             )
             for category in entity_categories:
                 signals.append(
@@ -192,8 +171,7 @@ class RootCauseClassifier:
                     )
                 )
         contract_categories = _metadata_categories(
-            contract.metadata
-            for contract in correlation.applicable_contracts
+            contract.metadata for contract in correlation.applicable_contracts
         )
         for category in contract_categories:
             signals.append(
@@ -205,8 +183,7 @@ class RootCauseClassifier:
                 )
             )
         finding_categories = _metadata_categories(
-            finding.metadata
-            for finding in correlation.correlated_findings
+            finding.metadata for finding in correlation.correlated_findings
         )
         for category in finding_categories:
             signals.append(
@@ -228,6 +205,8 @@ class RootCauseClassifier:
                 ),
             )
         )
+
+
 _ALLOWED_CATEGORIES = {
     "configuration",
     "dependency",
@@ -240,18 +219,19 @@ _ALLOWED_CATEGORIES = {
     "infrastructure",
     "unsupported",
 }
+
+
 def _metadata_categories(
     metadata_values: object,
 ) -> tuple[str, ...]:
     categories: set[str] = set()
     for metadata in metadata_values:
         value = metadata.get("CI_failure_category")
-        if (
-            isinstance(value, str)
-            and value in _ALLOWED_CATEGORIES
-        ):
+        if isinstance(value, str) and value in _ALLOWED_CATEGORIES:
             categories.add(value)
     return tuple(sorted(categories))
+
+
 def _normalize_command(
     value: str | None,
 ) -> str | None:

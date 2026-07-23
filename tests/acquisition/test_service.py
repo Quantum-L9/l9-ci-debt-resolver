@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 import hashlib
+
 import pytest
+
 from l9_debt_resolver.acquisition.models import (
     AcquiredLog,
     FailedJob,
@@ -14,9 +17,12 @@ from l9_debt_resolver.acquisition.service import (
 from l9_debt_resolver.contracts.models import (
     CIRunEvidence,
 )
+
+
 class Provider:
     def __init__(self, completeness: str) -> None:
         self.completeness = completeness
+
     async def identify_failed_run(
         self,
         *,
@@ -35,6 +41,7 @@ class Provider:
             created_at=None,
             updated_at=None,
         )
+
     async def retrieve_failed_jobs(
         self,
         *,
@@ -63,6 +70,7 @@ class Provider:
                 ),
             ),
         )
+
     async def retrieve_failed_log(
         self,
         *,
@@ -85,12 +93,8 @@ class Provider:
             authority_class="RUNTIME_LOG",
             artifact_provenance={
                 "source": "github_actions_job_log",
-                "retrieval_id": (
-                    "retrieval_" + "b" * 64
-                ),
-                "retrieved_at": (
-                    "2026-07-18T00:00:00Z"
-                ),
+                "retrieval_id": ("retrieval_" + "b" * 64),
+                "retrieved_at": ("2026-07-18T00:00:00Z"),
             },
             observed_at="2026-07-18T00:00:00Z",
             limitations=(),
@@ -118,6 +122,8 @@ class Provider:
             provenance=provenance,
             redacted_text="log",
         )
+
+
 @pytest.mark.asyncio
 async def test_complete_evidence_is_ready() -> None:
     service = FailedLogAcquisitionService(
@@ -129,6 +135,8 @@ async def test_complete_evidence_is_ready() -> None:
         run_id="100",
     )
     assert report.terminal_state == "evidence_ready"
+
+
 @pytest.mark.asyncio
 async def test_incomplete_evidence_fails_closed() -> None:
     service = FailedLogAcquisitionService(
@@ -139,7 +147,4 @@ async def test_incomplete_evidence_fails_closed() -> None:
         repository="Quantum-L9/example",
         run_id="100",
     )
-    assert (
-        report.terminal_state
-        == "insufficient_log_evidence"
-    )
+    assert report.terminal_state == "insufficient_log_evidence"

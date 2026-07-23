@@ -1,20 +1,26 @@
 from __future__ import annotations
+
 import asyncio
-from dataclasses import dataclass
 import hashlib
+from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+
 from .errors import (
     DirtyWorkspaceError,
     RemoteOperationError,
     RevisionMismatchError,
 )
 from .policy import validate_branch_name
+
+
 @dataclass(frozen=True)
 class GitResult:
     exit_code: int
     stdout: str
     stderr: str
+
+
 class GitRepository:
     def __init__(
         self,
@@ -22,12 +28,14 @@ class GitRepository:
         workspace_root: Path,
     ) -> None:
         self._root = workspace_root.resolve()
+
     async def head_sha(self) -> str:
         result = await self._run(
             "rev-parse",
             "HEAD",
         )
         return result.stdout.strip()
+
     async def remote_url(
         self,
         remote: str,
@@ -38,6 +46,7 @@ class GitRepository:
             remote,
         )
         return result.stdout.strip()
+
     async def changed_paths(self) -> tuple[str, ...]:
         result = await self._run(
             "status",
@@ -56,6 +65,7 @@ class GitRepository:
                 )[1]
             paths.append(value)
         return tuple(sorted(set(paths)))
+
     async def verify_revision(
         self,
         expected_revision: str,
@@ -65,6 +75,7 @@ class GitRepository:
             raise RevisionMismatchError(
                 "local HEAD does not match remediation revision"
             )
+
     async def verify_expected_changes(
         self,
         expected_paths: Iterable[str],
@@ -77,6 +88,7 @@ class GitRepository:
                 f"the remediation plan; expected={sorted(expected)}, "
                 f"actual={sorted(actual)}"
             )
+
     async def create_branch(
         self,
         branch: str,
@@ -87,19 +99,19 @@ class GitRepository:
             "--create",
             branch,
         )
+
     async def stage_paths(
         self,
         paths: tuple[str, ...],
     ) -> None:
         if not paths:
-            raise RemoteOperationError(
-                "cannot stage an empty remediation"
-            )
+            raise RemoteOperationError("cannot stage an empty remediation")
         await self._run(
             "add",
             "--",
             *paths,
         )
+
     async def commit(
         self,
         *,
@@ -121,6 +133,7 @@ class GitRepository:
             environment=environment,
         )
         return await self.head_sha()
+
     async def push(
         self,
         *,
@@ -134,12 +147,14 @@ class GitRepository:
             remote,
             f"HEAD:refs/heads/{branch}",
         )
+
     async def _run(
         self,
         *arguments: str,
         environment: dict[str, str] | None = None,
     ) -> GitResult:
         import os
+
         command_environment = dict(os.environ)
         if environment:
             command_environment.update(environment)
@@ -164,9 +179,7 @@ class GitRepository:
             ),
         )
         if result.exit_code != 0:
-            stderr_hash = hashlib.sha256(
-                stderr
-            ).hexdigest()
+            stderr_hash = hashlib.sha256(stderr).hexdigest()
             raise RemoteOperationError(
                 "git operation failed; "
                 f"command={arguments[0]}, "
