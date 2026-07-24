@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import pytest
+
 from l9_debt_resolver.correlation.models import (
     StackFrame,
 )
@@ -9,6 +11,8 @@ from l9_debt_resolver.sdk.document_adapter import (
 from l9_debt_resolver.sdk.errors import (
     SnapshotMismatchError,
 )
+
+
 def document() -> dict[str, object]:
     return {
         "schema_version": "l9.sdk-knowledge-document/v1",
@@ -30,9 +34,7 @@ def document() -> dict[str, object]:
                 "end_line": 100,
                 "symbol": "execute",
                 "language": "python",
-                "metadata": {
-                    "CI_failure_category": "test_failure"
-                },
+                "metadata": {"CI_failure_category": "test_failure"},
             }
         ],
         "tests": [
@@ -44,9 +46,7 @@ def document() -> dict[str, object]:
                 "end_line": 50,
                 "symbol": "test_execute",
                 "language": "python",
-                "metadata": {
-                    "related_entity_ids": ["entity-1"]
-                },
+                "metadata": {"related_entity_ids": ["entity-1"]},
             }
         ],
         "contracts": [
@@ -54,9 +54,7 @@ def document() -> dict[str, object]:
                 "contract_id": "contract-1",
                 "kind": "behavior",
                 "subject_entity_ids": ["entity-1"],
-                "metadata": {
-                    "CI_failure_category": "test_failure"
-                },
+                "metadata": {"CI_failure_category": "test_failure"},
             }
         ],
         "findings": [
@@ -66,17 +64,15 @@ def document() -> dict[str, object]:
                 "severity": "error",
                 "entity_ids": ["entity-1"],
                 "evidence_ids": [],
-                "metadata": {
-                    "CI_failure_category": "test_failure"
-                },
+                "metadata": {"CI_failure_category": "test_failure"},
             }
         ],
     }
+
+
 @pytest.mark.asyncio
 async def test_snapshot_and_entity_correlation() -> None:
-    adapter = DocumentSDKKnowledgeProvider(
-        document()
-    )
+    adapter = DocumentSDKKnowledgeProvider(document())
     snapshot = await adapter.open_repository_snapshot(
         repository="Quantum-L9/example",
         revision="abcdef1234567",
@@ -98,14 +94,12 @@ async def test_snapshot_and_entity_correlation() -> None:
         ),
     )
     assert snapshot.snapshot_id == "snapshot-1"
-    assert [entity.entity_id for entity in entities] == [
-        "entity-1"
-    ]
+    assert [entity.entity_id for entity in entities] == ["entity-1"]
+
+
 @pytest.mark.asyncio
 async def test_snapshot_mismatch_fails() -> None:
-    adapter = DocumentSDKKnowledgeProvider(
-        document()
-    )
+    adapter = DocumentSDKKnowledgeProvider(document())
     with pytest.raises(SnapshotMismatchError):
         await adapter.open_repository_snapshot(
             repository="Quantum-L9/example",

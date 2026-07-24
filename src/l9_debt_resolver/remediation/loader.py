@@ -1,29 +1,24 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
+
 from .models import (
     Approval,
     RemediationPlan,
     ReplaceTextOperation,
 )
+
+
 def load_remediation_plan(
     path: Path,
 ) -> RemediationPlan:
-    document = json.loads(
-        path.read_text(encoding="utf-8")
-    )
+    document = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(document, dict):
-        raise ValueError(
-            "remediation plan must be an object"
-        )
-    if (
-        document.get("schema_version")
-        != "l9.remediation-plan/v1"
-    ):
-        raise ValueError(
-            "unsupported remediation plan version"
-        )
+        raise ValueError("remediation plan must be an object")
+    if document.get("schema_version") != "l9.remediation-plan/v1":
+        raise ValueError("unsupported remediation plan version")
     operations = tuple(
         _operation(value)
         for value in _list(
@@ -32,11 +27,7 @@ def load_remediation_plan(
         )
     )
     approval_value = document.get("approval")
-    approval = (
-        _approval(approval_value)
-        if approval_value is not None
-        else None
-    )
+    approval = _approval(approval_value) if approval_value is not None else None
     return RemediationPlan(
         plan_id=_string(document, "plan_id"),
         classification_id=_string(
@@ -110,6 +101,8 @@ def load_remediation_plan(
         ),
         approval=approval,
     )
+
+
 def _operation(
     value: object,
 ) -> ReplaceTextOperation:
@@ -149,6 +142,8 @@ def _operation(
             "justification",
         ),
     )
+
+
 def _approval(
     value: object,
 ) -> Approval:
@@ -175,39 +170,38 @@ def _approval(
             "expires_at",
         ),
     )
+
+
 def _object(
     value: object,
 ) -> dict[str, Any]:
     if not isinstance(value, dict):
-        raise ValueError(
-            "expected JSON object"
-        )
+        raise ValueError("expected JSON object")
     return value
+
+
 def _list(
     document: dict[str, Any],
     key: str,
 ) -> list[object]:
     value = document.get(key)
     if not isinstance(value, list):
-        raise ValueError(
-            f"{key} must be an array"
-        )
+        raise ValueError(f"{key} must be an array")
     return value
+
+
 def _string(
     document: dict[str, Any],
     key: str,
 ) -> str:
     value = document.get(key)
     if not isinstance(value, str):
-        raise ValueError(
-            f"{key} must be a string"
-        )
+        raise ValueError(f"{key} must be a string")
     return value
+
+
 def _string_list(
     document: dict[str, Any],
     key: str,
 ) -> list[str]:
-    return [
-        str(value)
-        for value in _list(document, key)
-    ]
+    return [str(value) for value in _list(document, key)]

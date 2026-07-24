@@ -1,8 +1,12 @@
 from __future__ import annotations
+
 import pytest
+
 from l9_debt_resolver.acquisition.redaction import (
     LogRedactor,
 )
+
+
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
@@ -35,10 +39,10 @@ def test_sensitive_content_is_redacted(
     result = LogRedactor().redact(raw)
     assert expected in result.text
     assert raw != result.text
+
+
 def test_repository_root_is_redacted() -> None:
-    result = LogRedactor(
-        "/workspace/project"
-    ).redact(
+    result = LogRedactor("/workspace/project").redact(
         "/workspace/project/src/module.py failed"
     )
     assert "/workspace/project" not in result.text

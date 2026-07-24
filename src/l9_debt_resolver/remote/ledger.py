@@ -1,10 +1,14 @@
 from __future__ import annotations
+
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 from typing import Any
+
 from .errors import AttemptLimitReachedError
+
+
 class AttemptLedger:
     def __init__(
         self,
@@ -14,6 +18,7 @@ class AttemptLedger:
     ) -> None:
         self._path = path
         self._maximum_attempts = maximum_attempts
+
     def next_attempt(
         self,
         failure_fingerprint: str,
@@ -31,13 +36,13 @@ class AttemptLedger:
         )
         if current >= self._maximum_attempts:
             raise AttemptLimitReachedError(
-                "failure fingerprint reached "
-                "the configured attempt limit"
+                "failure fingerprint reached the configured attempt limit"
             )
         next_value = current + 1
         attempts[failure_fingerprint] = next_value
         self._write(document)
         return next_value
+
     def count(
         self,
         failure_fingerprint: str,
@@ -52,24 +57,18 @@ class AttemptLedger:
                 0,
             )
         )
+
     def _load(self) -> dict[str, Any]:
         if not self._path.exists():
             return {
-                "schema_version": (
-                    "l9.remote-attempt-ledger/v1"
-                ),
+                "schema_version": ("l9.remote-attempt-ledger/v1"),
                 "attempts": {},
             }
-        value = json.loads(
-            self._path.read_text(
-                encoding="utf-8"
-            )
-        )
+        value = json.loads(self._path.read_text(encoding="utf-8"))
         if not isinstance(value, dict):
-            raise ValueError(
-                "attempt ledger must be an object"
-            )
+            raise ValueError("attempt ledger must be an object")
         return value
+
     def _write(
         self,
         value: dict[str, Any],

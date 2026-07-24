@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
+
 @dataclass(frozen=True)
 class PushAuthorization:
     authorization_id: str
@@ -8,12 +11,15 @@ class PushAuthorization:
     remote: str
     branch: str
     expires_at: str
+
+
 @dataclass(frozen=True)
 class RemoteOperationRecord:
     operation: str
     result: str
     observed_at: str
     metadata: dict[str, Any]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "operation": self.operation,
@@ -21,6 +27,8 @@ class RemoteOperationRecord:
             "observed_at": self.observed_at,
             "metadata": self.metadata,
         }
+
+
 @dataclass(frozen=True)
 class RemoteAttempt:
     attempt_id: str
@@ -38,6 +46,7 @@ class RemoteAttempt:
     completed_at: str | None
     operations: tuple[RemoteOperationRecord, ...]
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.remote-attempt/v1",
@@ -54,12 +63,11 @@ class RemoteAttempt:
             "status": self.status,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
-            "operations": [
-                operation.as_dict()
-                for operation in self.operations
-            ],
+            "operations": [operation.as_dict() for operation in self.operations],
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class RerunObservation:
     observation_id: str
@@ -74,6 +82,7 @@ class RerunObservation:
     completed_at: str | None
     poll_count: int
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.rerun-observation/v1",

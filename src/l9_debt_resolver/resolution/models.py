@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
+
 @dataclass(frozen=True)
 class ResolutionOutcome:
     outcome_id: str
@@ -15,18 +18,15 @@ class ResolutionOutcome:
     rerun_id: str | None
     evidence_ids: tuple[str, ...]
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.resolution-outcome/v1",
             "outcome_id": self.outcome_id,
             "attempt_id": self.attempt_id,
             "terminal_state": self.terminal_state,
-            "original_failure_fingerprint": (
-                self.original_failure_fingerprint
-            ),
-            "observed_failure_fingerprint": (
-                self.observed_failure_fingerprint
-            ),
+            "original_failure_fingerprint": (self.original_failure_fingerprint),
+            "observed_failure_fingerprint": (self.observed_failure_fingerprint),
             "repository": self.repository,
             "branch": self.branch,
             "commit_sha": self.commit_sha,

@@ -1,17 +1,24 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import re
+from dataclasses import dataclass
+
 from l9_debt_resolver.contracts.canonical import (
     namespaced_identity,
 )
+
+from .errors import UnsafePathError
 from .models import StackFrame
 from .paths import normalize_log_path
-from .errors import UnsafePathError
+
+
 @dataclass(frozen=True)
 class FramePattern:
     language_family: str
     confidence: float
     pattern: re.Pattern[str]
+
+
 _PATTERNS = (
     FramePattern(
         language_family="python",
@@ -78,6 +85,8 @@ _PATTERNS = (
         ),
     ),
 )
+
+
 def extract_stack_frames(
     redacted_log: str,
 ) -> tuple[StackFrame, ...]:
@@ -96,15 +105,9 @@ def extract_stack_frames(
                     path = normalize_log_path(raw_path)
                 except UnsafePathError:
                     continue
-                line = _positive_integer(
-                    match.groupdict().get("line")
-                )
-                column = _positive_integer(
-                    match.groupdict().get("column")
-                )
-                symbol = _clean_symbol(
-                    match.groupdict().get("symbol")
-                )
+                line = _positive_integer(match.groupdict().get("line"))
+                column = _positive_integer(match.groupdict().get("column"))
+                symbol = _clean_symbol(match.groupdict().get("symbol"))
                 key = (
                     path,
                     line,
@@ -125,18 +128,13 @@ def extract_stack_frames(
                     line=line,
                     column=column,
                     symbol_hint=symbol,
-                    language_family=(
-                        frame_pattern.language_family
-                    ),
+                    language_family=(frame_pattern.language_family),
                     log_line_number=log_line_number,
                     confidence=frame_pattern.confidence,
                     limitations=(),
                 )
                 current = frames.get(key)
-                if (
-                    current is None
-                    or candidate.confidence > current.confidence
-                ):
+                if current is None or candidate.confidence > current.confidence:
                     frames[key] = candidate
     return tuple(
         sorted(
@@ -150,6 +148,8 @@ def extract_stack_frames(
             ),
         )
     )
+
+
 def _positive_integer(
     value: str | None,
 ) -> int | None:
@@ -157,6 +157,8 @@ def _positive_integer(
         return None
     parsed = int(value)
     return parsed if parsed > 0 else None
+
+
 def _clean_symbol(
     value: str | None,
 ) -> str | None:

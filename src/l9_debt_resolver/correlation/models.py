@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
 from l9_debt_resolver.sdk.models import (
     SDKContractReference,
     SDKFindingReference,
     SDKRepositoryEntity,
 )
+
+
 @dataclass(frozen=True)
 class EvidenceBundle:
     repository: str
@@ -13,6 +17,8 @@ class EvidenceBundle:
     evidence: Any
     redacted_log: str
     failed_job: Any
+
+
 @dataclass(frozen=True)
 class StackFrame:
     frame_id: str
@@ -24,6 +30,7 @@ class StackFrame:
     log_line_number: int
     confidence: float
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.stack-frame/v1",
@@ -37,6 +44,8 @@ class StackFrame:
             "confidence": self.confidence,
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class RepositoryCorrelation:
     correlation_id: str
@@ -49,16 +58,14 @@ class RepositoryCorrelation:
     correlated_findings: tuple[SDKFindingReference, ...]
     unresolved_locations: tuple[StackFrame, ...]
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.repository-correlation/v1",
             "correlation_id": self.correlation_id,
             "evidence_id": self.evidence_id,
             "repository_snapshot_id": self.repository_snapshot_id,
-            "stack_frames": [
-                frame.as_dict()
-                for frame in self.stack_frames
-            ],
+            "stack_frames": [frame.as_dict() for frame in self.stack_frames],
             "repository_entities": [
                 {
                     "entity_id": entity.entity_id,
@@ -89,9 +96,7 @@ class RepositoryCorrelation:
                 {
                     "contract_id": contract.contract_id,
                     "kind": contract.kind,
-                    "subject_entity_ids": list(
-                        contract.subject_entity_ids
-                    ),
+                    "subject_entity_ids": list(contract.subject_entity_ids),
                     "metadata": contract.metadata,
                 }
                 for contract in self.applicable_contracts
@@ -108,8 +113,7 @@ class RepositoryCorrelation:
                 for finding in self.correlated_findings
             ],
             "unresolved_locations": [
-                frame.as_dict()
-                for frame in self.unresolved_locations
+                frame.as_dict() for frame in self.unresolved_locations
             ],
             "limitations": list(self.limitations),
         }

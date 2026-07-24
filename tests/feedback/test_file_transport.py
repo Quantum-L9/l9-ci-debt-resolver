@@ -1,22 +1,23 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import pytest
+
 from l9_debt_resolver.feedback.file_transport import (
     JSONFileFeedbackTransport,
 )
 from l9_debt_resolver.feedback.models import (
     FeedbackEvent,
 )
+
+
 def event() -> FeedbackEvent:
     return FeedbackEvent(
         event_id="feedback_event_" + "a" * 64,
-        idempotency_key=(
-            "feedback_idempotency_" + "b" * 64
-        ),
+        idempotency_key=("feedback_idempotency_" + "b" * 64),
         event_type="resolution_succeeded",
-        repository_pseudonym=(
-            "repository_" + "c" * 64
-        ),
+        repository_pseudonym=("repository_" + "c" * 64),
         provider="github_actions",
         resolver_version="0.6.0",
         occurred_at="2026-07-19T00:00:00Z",
@@ -61,13 +62,13 @@ def event() -> FeedbackEvent:
         },
         limitations=(),
     )
+
+
 @pytest.mark.asyncio
 async def test_file_transport_is_idempotent(
     tmp_path: Path,
 ) -> None:
-    transport = JSONFileFeedbackTransport(
-        directory=tmp_path
-    )
+    transport = JSONFileFeedbackTransport(directory=tmp_path)
     first = await transport.deliver(event())
     second = await transport.deliver(event())
     assert first.duplicate is False

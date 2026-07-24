@@ -1,10 +1,13 @@
 from __future__ import annotations
+
 import ipaddress
 import json
 import re
 from typing import Any
 from urllib.parse import urlsplit
+
 from .errors import FeedbackPrivacyError
+
 FORBIDDEN_KEY_FRAGMENTS = (
     "token",
     "secret",
@@ -27,31 +30,21 @@ FORBIDDEN_KEY_FRAGMENTS = (
     "repository_path",
     "environment",
 )
-EMAIL = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
-)
-BEARER = re.compile(
-    r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}"
-)
-GITHUB_TOKEN = re.compile(
-    r"\b(?:ghp|github_pat|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b"
-)
-AWS_KEY = re.compile(
-    r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b"
-)
-PRIVATE_KEY = re.compile(
-    r"-----BEGIN [A-Z ]*PRIVATE KEY-----"
-)
+EMAIL = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
+BEARER = re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}")
+GITHUB_TOKEN = re.compile(r"\b(?:ghp|github_pat|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}\b")
+AWS_KEY = re.compile(r"\b(?:AKIA|ASIA)[A-Z0-9]{16}\b")
+PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
 UNIX_PATH = re.compile(
     r"(?<![A-Za-z0-9_.-])/(?:home|Users|var|tmp|opt|workspace|github)/"
 )
-WINDOWS_PATH = re.compile(
-    r"\b[A-Za-z]:\\(?:Users|Temp|workspace|runner)\\"
-)
+WINDOWS_PATH = re.compile(r"\b[A-Za-z]:\\(?:Users|Temp|workspace|runner)\\")
 MAX_EVENT_BYTES = 65536
 MAX_STRING_LENGTH = 2000
 MAX_ARRAY_ITEMS = 500
 MAX_DEPTH = 10
+
+
 def validate_feedback_event(
     event: dict[str, Any],
 ) -> None:
@@ -62,14 +55,14 @@ def validate_feedback_event(
         separators=(",", ":"),
     ).encode("utf-8")
     if len(encoded) > MAX_EVENT_BYTES:
-        raise FeedbackPrivacyError(
-            "feedback event exceeds maximum size"
-        )
+        raise FeedbackPrivacyError("feedback event exceeds maximum size")
     _validate_value(
         event,
         path="$",
         depth=0,
     )
+
+
 def _validate_value(
     value: Any,
     *,
@@ -77,19 +70,12 @@ def _validate_value(
     depth: int,
 ) -> None:
     if depth > MAX_DEPTH:
-        raise FeedbackPrivacyError(
-            f"feedback event exceeds maximum depth at {path}"
-        )
+        raise FeedbackPrivacyError(f"feedback event exceeds maximum depth at {path}")
     if isinstance(value, dict):
         for key, item in value.items():
             normalized_key = str(key).casefold()
-            if any(
-                fragment in normalized_key
-                for fragment in FORBIDDEN_KEY_FRAGMENTS
-            ):
-                raise FeedbackPrivacyError(
-                    f"forbidden feedback key at {path}.{key}"
-                )
+            if any(fragment in normalized_key for fragment in FORBIDDEN_KEY_FRAGMENTS):
+                raise FeedbackPrivacyError(f"forbidden feedback key at {path}.{key}")
             _validate_value(
                 item,
                 path=f"{path}.{key}",
@@ -98,9 +84,7 @@ def _validate_value(
         return
     if isinstance(value, list):
         if len(value) > MAX_ARRAY_ITEMS:
-            raise FeedbackPrivacyError(
-                f"feedback array exceeds maximum size at {path}"
-            )
+            raise FeedbackPrivacyError(f"feedback array exceeds maximum size at {path}")
         for index, item in enumerate(value):
             _validate_value(
                 item,
@@ -116,18 +100,16 @@ def _validate_value(
         (bool, int, float),
     ):
         return
-    raise FeedbackPrivacyError(
-        f"unsupported feedback value at {path}"
-    )
+    raise FeedbackPrivacyError(f"unsupported feedback value at {path}")
+
+
 def _validate_string(
     value: str,
     *,
     path: str,
 ) -> None:
     if len(value) > MAX_STRING_LENGTH:
-        raise FeedbackPrivacyError(
-            f"feedback string exceeds maximum size at {path}"
-        )
+        raise FeedbackPrivacyError(f"feedback string exceeds maximum size at {path}")
     patterns = (
         EMAIL,
         BEARER,
@@ -139,21 +121,15 @@ def _validate_string(
     )
     for pattern in patterns:
         if pattern.search(value):
-            raise FeedbackPrivacyError(
-                f"sensitive feedback value detected at {path}"
-            )
+            raise FeedbackPrivacyError(f"sensitive feedback value detected at {path}")
     if "\n" in value and len(value.splitlines()) > 5:
-        raise FeedbackPrivacyError(
-            f"multiline content is prohibited at {path}"
-        )
+        raise FeedbackPrivacyError(f"multiline content is prohibited at {path}")
     if _contains_ip_address(value):
-        raise FeedbackPrivacyError(
-            f"IP address detected at {path}"
-        )
+        raise FeedbackPrivacyError(f"IP address detected at {path}")
     if _contains_credential_url(value):
-        raise FeedbackPrivacyError(
-            f"credential-bearing URL detected at {path}"
-        )
+        raise FeedbackPrivacyError(f"credential-bearing URL detected at {path}")
+
+
 def _contains_ip_address(value: str) -> bool:
     candidates = re.findall(
         r"(?<![A-Za-z0-9:])"
@@ -168,6 +144,8 @@ def _contains_ip_address(value: str) -> bool:
         except ValueError:
             continue
     return False
+
+
 def _contains_credential_url(value: str) -> bool:
     for candidate in re.findall(
         r"https?://[^\s]+",

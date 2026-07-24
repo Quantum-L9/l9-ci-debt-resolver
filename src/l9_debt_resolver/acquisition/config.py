@@ -1,5 +1,8 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
+
+
 @dataclass(frozen=True)
 class RetryPolicy:
     maximum_attempts: int = 4
@@ -17,21 +20,18 @@ class RetryPolicy:
             504,
         }
     )
+
     def __post_init__(self) -> None:
         if self.maximum_attempts < 1:
             raise ValueError("maximum_attempts must be positive")
         if self.initial_backoff_seconds < 0:
+            raise ValueError("initial_backoff_seconds cannot be negative")
+        if self.maximum_backoff_seconds < self.initial_backoff_seconds:
             raise ValueError(
-                "initial_backoff_seconds cannot be negative"
+                "maximum_backoff_seconds cannot be smaller than initial_backoff_seconds"
             )
-        if (
-            self.maximum_backoff_seconds
-            < self.initial_backoff_seconds
-        ):
-            raise ValueError(
-                "maximum_backoff_seconds cannot be smaller "
-                "than initial_backoff_seconds"
-            )
+
+
 @dataclass(frozen=True)
 class AcquisitionLimits:
     page_size: int = 100
@@ -39,21 +39,20 @@ class AcquisitionLimits:
     maximum_jobs_per_run: int = 1000
     maximum_log_bytes_per_job: int = 50 * 1024 * 1024
     maximum_total_log_bytes: int = 500 * 1024 * 1024
+
     def __post_init__(self) -> None:
         positive = {
             "page_size": self.page_size,
             "maximum_pages": self.maximum_pages,
             "maximum_jobs_per_run": self.maximum_jobs_per_run,
-            "maximum_log_bytes_per_job": (
-                self.maximum_log_bytes_per_job
-            ),
-            "maximum_total_log_bytes": (
-                self.maximum_total_log_bytes
-            ),
+            "maximum_log_bytes_per_job": (self.maximum_log_bytes_per_job),
+            "maximum_total_log_bytes": (self.maximum_total_log_bytes),
         }
         for name, value in positive.items():
             if value < 1:
                 raise ValueError(f"{name} must be positive")
+
+
 @dataclass(frozen=True)
 class AcquisitionConfig:
     retry: RetryPolicy = RetryPolicy()

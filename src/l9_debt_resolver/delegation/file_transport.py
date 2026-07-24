@@ -1,19 +1,25 @@
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 from .models import PRRepairRequest
+
+
 class JSONFilePRRepairTransport:
     name = "json_file"
+
     def __init__(
         self,
         *,
         directory: Path,
     ) -> None:
         self._directory = directory
+
     async def deliver(
         self,
         request: PRRepairRequest,
@@ -22,6 +28,7 @@ class JSONFilePRRepairTransport:
             self._deliver_sync,
             request,
         )
+
     def _deliver_sync(
         self,
         request: PRRepairRequest,
@@ -30,10 +37,7 @@ class JSONFilePRRepairTransport:
             parents=True,
             exist_ok=True,
         )
-        destination = (
-            self._directory
-            / f"{request.request_id}.json"
-        )
+        destination = self._directory / f"{request.request_id}.json"
         encoded = (
             json.dumps(
                 request.as_dict(),
@@ -46,12 +50,8 @@ class JSONFilePRRepairTransport:
         if destination.exists():
             existing = destination.read_bytes()
             if existing != encoded:
-                raise RuntimeError(
-                    "delegation request identity collision"
-                )
-            return hashlib.sha256(
-                existing
-            ).hexdigest()
+                raise RuntimeError("delegation request identity collision")
+            return hashlib.sha256(existing).hexdigest()
         descriptor, temporary = tempfile.mkstemp(
             dir=self._directory,
             prefix=".pr-repair-request.",
@@ -72,6 +72,4 @@ class JSONFilePRRepairTransport:
         finally:
             if os.path.exists(temporary):
                 os.unlink(temporary)
-        return hashlib.sha256(
-            encoded
-        ).hexdigest()
+        return hashlib.sha256(encoded).hexdigest()

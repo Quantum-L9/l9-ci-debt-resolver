@@ -1,13 +1,16 @@
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import os
-from pathlib import Path
 import time
+from pathlib import Path
+
 from .models import (
     ValidationStep,
     ValidationStepResult,
 )
+
 _ALLOWED_EXECUTABLES = {
     "python",
     "python3",
@@ -25,6 +28,8 @@ _ALLOWED_EXECUTABLES = {
     "./gradlew",
     "make",
 }
+
+
 class ValidationCommandRunner:
     def __init__(
         self,
@@ -32,6 +37,7 @@ class ValidationCommandRunner:
         timeout_seconds: float = 900.0,
     ) -> None:
         self._timeout_seconds = timeout_seconds
+
     async def execute(
         self,
         *,
@@ -50,22 +56,18 @@ class ValidationCommandRunner:
                 result="incomplete",
             )
         if not step.command:
-            raise ValueError(
-                "validation command cannot be empty"
-            )
+            raise ValueError("validation command cannot be empty")
         executable = step.command[0]
         if executable not in _ALLOWED_EXECUTABLES:
-            raise ValueError(
-                f"validation executable is not allowed: "
-                f"{executable}"
-            )
+            raise ValueError(f"validation executable is not allowed: {executable}")
         command_hash = hashlib.sha256(
             "\x00".join(step.command).encode("utf-8")
         ).hexdigest()
         environment = {
             key: value
             for key, value in os.environ.items()
-            if key not in {
+            if key
+            not in {
                 "GITHUB_TOKEN",
                 "GH_TOKEN",
                 "AWS_SECRET_ACCESS_KEY",
@@ -96,9 +98,7 @@ class ValidationCommandRunner:
                 kind=step.kind,
                 command_sha256=command_hash,
                 exit_code=None,
-                duration_bucket=_duration_bucket(
-                    elapsed
-                ),
+                duration_bucket=_duration_bucket(elapsed),
                 stdout_sha256=None,
                 stderr_sha256=None,
                 result="failed",
@@ -109,21 +109,13 @@ class ValidationCommandRunner:
             kind=step.kind,
             command_sha256=command_hash,
             exit_code=process.returncode,
-            duration_bucket=_duration_bucket(
-                elapsed
-            ),
-            stdout_sha256=hashlib.sha256(
-                stdout
-            ).hexdigest(),
-            stderr_sha256=hashlib.sha256(
-                stderr
-            ).hexdigest(),
-            result=(
-                "passed"
-                if process.returncode == 0
-                else "failed"
-            ),
+            duration_bucket=_duration_bucket(elapsed),
+            stdout_sha256=hashlib.sha256(stdout).hexdigest(),
+            stderr_sha256=hashlib.sha256(stderr).hexdigest(),
+            result=("passed" if process.returncode == 0 else "failed"),
         )
+
+
 def _duration_bucket(seconds: float) -> str:
     if seconds < 1:
         return "lt_1s"

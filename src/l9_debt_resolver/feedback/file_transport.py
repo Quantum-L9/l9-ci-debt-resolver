@@ -1,22 +1,28 @@
 from __future__ import annotations
+
 import asyncio
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
+
 from .models import (
     DeliveryResponse,
     FeedbackEvent,
 )
+
+
 class JSONFileFeedbackTransport:
     name = "json_file"
+
     def __init__(
         self,
         *,
         directory: Path,
     ) -> None:
         self._directory = directory
+
     async def deliver(
         self,
         event: FeedbackEvent,
@@ -25,6 +31,7 @@ class JSONFileFeedbackTransport:
             self._deliver_sync,
             event,
         )
+
     def _deliver_sync(
         self,
         event: FeedbackEvent,
@@ -33,10 +40,7 @@ class JSONFileFeedbackTransport:
             parents=True,
             exist_ok=True,
         )
-        destination = (
-            self._directory
-            / f"{event.event_id}.json"
-        )
+        destination = self._directory / f"{event.event_id}.json"
         encoded = (
             json.dumps(
                 event.as_dict(),
@@ -53,15 +57,9 @@ class JSONFileFeedbackTransport:
                     transport=self.name,
                     status_code=409,
                     duplicate=True,
-                    response_body_sha256=(
-                        hashlib.sha256(
-                            existing
-                        ).hexdigest()
-                    ),
+                    response_body_sha256=(hashlib.sha256(existing).hexdigest()),
                 )
-            raise RuntimeError(
-                "event identity collision in file transport"
-            )
+            raise RuntimeError("event identity collision in file transport")
         descriptor, temporary = tempfile.mkstemp(
             dir=self._directory,
             prefix=".feedback-event.",
@@ -86,9 +84,5 @@ class JSONFileFeedbackTransport:
             transport=self.name,
             status_code=201,
             duplicate=False,
-            response_body_sha256=(
-                hashlib.sha256(
-                    encoded
-                ).hexdigest()
-            ),
+            response_body_sha256=(hashlib.sha256(encoded).hexdigest()),
         )

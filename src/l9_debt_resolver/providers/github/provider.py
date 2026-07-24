@@ -1,9 +1,11 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+
 import hashlib
 import os
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
+
 from l9_debt_resolver.acquisition.completeness import (
     assess_log_completeness,
 )
@@ -12,7 +14,6 @@ from l9_debt_resolver.acquisition.config import (
 )
 from l9_debt_resolver.acquisition.errors import (
     JobLimitError,
-    LogSizeLimitError,
     PaginationLimitError,
     RemoteResponseError,
 )
@@ -29,13 +30,22 @@ from l9_debt_resolver.contracts.canonical import (
     namespaced_identity,
 )
 from l9_debt_resolver.contracts.models import CIRunEvidence
+
 from .parser import parse_failed_jobs, parse_run
 from .transport import GitHubTransport
+
+
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace(
-        "+00:00",
-        "Z",
+    return (
+        datetime.now(UTC)
+        .isoformat()
+        .replace(
+            "+00:00",
+            "Z",
+        )
     )
+
+
 class GitHubActionsProvider:
     def __init__(
         self,
@@ -52,6 +62,7 @@ class GitHubActionsProvider:
             base_url=base_url,
         )
         self._redactor = LogRedactor(repository_root)
+
     @classmethod
     def from_environment(
         cls,
@@ -59,18 +70,15 @@ class GitHubActionsProvider:
         config: AcquisitionConfig | None = None,
         repository_root: str | None = None,
         base_url: str = "https://api.github.com",
-    ) -> "GitHubActionsProvider":
-        token = (
-            os.environ.get("GITHUB_TOKEN")
-            or os.environ.get("GH_TOKEN")
-            or ""
-        )
+    ) -> GitHubActionsProvider:
+        token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or ""
         return cls(
             token=token,
             config=config,
             repository_root=repository_root,
             base_url=base_url,
         )
+
     async def identify_failed_run(
         self,
         *,
@@ -79,13 +87,13 @@ class GitHubActionsProvider:
     ) -> FailedRun:
         owner, name = _repository_parts(repository)
         document, _ = await self._transport.get_json(
-            f"/repos/{quote(owner)}/{quote(name)}"
-            f"/actions/runs/{quote(run_id)}"
+            f"/repos/{quote(owner)}/{quote(name)}/actions/runs/{quote(run_id)}"
         )
         return parse_run(
             document,
             repository=repository,
         )
+
     async def retrieve_failed_jobs(
         self,
         *,
@@ -110,32 +118,18 @@ class GitHubActionsProvider:
                 run_id=run_id,
             )
             jobs.extend(page_jobs)
-            if (
-                len(jobs)
-                > self._config.limits.maximum_jobs_per_run
-            ):
-                raise JobLimitError(
-                    "run exceeded the configured job limit"
-                )
+            if len(jobs) > self._config.limits.maximum_jobs_per_run:
+                raise JobLimitError("run exceeded the configured job limit")
             raw_jobs = document.get("jobs")
             if not isinstance(raw_jobs, list):
-                raise RemoteResponseError(
-                    "GitHub jobs page is invalid"
-                )
-            if (
-                len(raw_jobs)
-                < self._config.limits.page_size
-            ):
+                raise RemoteResponseError("GitHub jobs page is invalid")
+            if len(raw_jobs) < self._config.limits.page_size:
                 break
         else:
             raise PaginationLimitError(
-                "GitHub jobs pagination exceeded "
-                "the configured page limit"
+                "GitHub jobs pagination exceeded the configured page limit"
             )
-        unique = {
-            job.job_id: job
-            for job in jobs
-        }
+        unique = {job.job_id: job for job in jobs}
         return tuple(
             sorted(
                 unique.values(),
@@ -145,6 +139,7 @@ class GitHubActionsProvider:
                 ),
             )
         )
+
     async def retrieve_failed_log(
         self,
         *,
@@ -159,15 +154,11 @@ class GitHubActionsProvider:
             accept="application/vnd.github+json",
         )
         raw = response.body
-        limit = (
-            self._config.limits.maximum_log_bytes_per_job
-        )
+        limit = self._config.limits.maximum_log_bytes_per_job
         exceeded_limit = len(raw) > limit
         if exceeded_limit:
             raw = raw[:limit]
-        content_length = _content_length(
-            response.headers.get("content-length")
-        )
+        content_length = _content_length(response.headers.get("content-length"))
         assessment = assess_log_completeness(
             raw=raw,
             content_length=content_length,
@@ -181,9 +172,7 @@ class GitHubActionsProvider:
         redaction = self._redactor.redact(decoded)
         redacted_bytes = redaction.text.encode("utf-8")
         raw_sha256 = hashlib.sha256(raw).hexdigest()
-        redacted_sha256 = hashlib.sha256(
-            redacted_bytes
-        ).hexdigest()
+        redacted_sha256 = hashlib.sha256(redacted_bytes).hexdigest()
         retrieved_at = utc_now()
         retrieval_material: dict[str, Any] = {
             "provider": "github_actions",
@@ -202,10 +191,7 @@ class GitHubActionsProvider:
                 {
                     *assessment.limitations,
                     *(
-                        (
-                            "log redaction classes: "
-                            + ",".join(redaction.classes),
-                        )
+                        ("log redaction classes: " + ",".join(redaction.classes),)
                         if redaction.classes
                         else ()
                     ),
@@ -222,9 +208,7 @@ class GitHubActionsProvider:
             retrieved_at=retrieved_at,
             etag=response.headers.get("etag"),
             content_length=content_length,
-            content_type=response.headers.get(
-                "content-type"
-            ),
+            content_type=response.headers.get("content-type"),
             raw_sha256=raw_sha256,
             redacted_sha256=redacted_sha256,
             raw_byte_count=len(raw),
@@ -232,11 +216,7 @@ class GitHubActionsProvider:
             completeness=assessment.state,
             limitations=limitations,
         )
-        failed_command = (
-            job.failed_steps[0].name
-            if job.failed_steps
-            else None
-        )
+        failed_command = job.failed_steps[0].name if job.failed_steps else None
         evidence_material = {
             "provider": "github_actions",
             "run_id": run_id,
@@ -254,17 +234,13 @@ class GitHubActionsProvider:
             job_id=job.job_id,
             job_name=job.name,
             failed_command=failed_command,
-            conclusion=_normalize_conclusion(
-                job.conclusion
-            ),
+            conclusion=_normalize_conclusion(job.conclusion),
             log_sha256=raw_sha256,
             log_size_bytes=len(raw),
             log_completeness=assessment.state,
             authority_class="RUNTIME_LOG",
             artifact_provenance={
-                "source": (
-                    "github_actions_job_log"
-                ),
+                "source": ("github_actions_job_log"),
                 "retrieval_id": retrieval_id,
                 "retrieved_at": retrieved_at,
             },
@@ -276,19 +252,17 @@ class GitHubActionsProvider:
             provenance=provenance,
             redacted_text=redaction.text,
         )
+
+
 def _repository_parts(
     repository: str,
 ) -> tuple[str, str]:
     parts = repository.split("/")
-    if (
-        len(parts) != 2
-        or not parts[0]
-        or not parts[1]
-    ):
-        raise ValueError(
-            "repository must use owner/name format"
-        )
+    if len(parts) != 2 or not parts[0] or not parts[1]:
+        raise ValueError("repository must use owner/name format")
     return parts[0], parts[1]
+
+
 def _content_length(
     value: str | None,
 ) -> int | None:
@@ -299,6 +273,8 @@ def _content_length(
     except ValueError:
         return None
     return parsed if parsed >= 0 else None
+
+
 def _normalize_conclusion(
     value: str,
 ) -> str:

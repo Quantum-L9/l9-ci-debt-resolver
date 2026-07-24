@@ -1,7 +1,11 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
 from l9_debt_resolver.contracts.models import CIRunEvidence
+
+
 @dataclass(frozen=True)
 class FailedRun:
     provider: str
@@ -14,6 +18,7 @@ class FailedRun:
     workflow_id: str | None
     created_at: str | None
     updated_at: str | None
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "provider": self.provider,
@@ -27,11 +32,15 @@ class FailedRun:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+
+
 @dataclass(frozen=True)
 class FailedStep:
     number: int
     name: str
     conclusion: str
+
+
 @dataclass(frozen=True)
 class FailedJob:
     provider: str
@@ -45,6 +54,7 @@ class FailedJob:
     runner_name: str | None
     labels: tuple[str, ...]
     failed_steps: tuple[FailedStep, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.failed-job/v1",
@@ -67,6 +77,8 @@ class FailedJob:
                 for step in self.failed_steps
             ],
         }
+
+
 @dataclass(frozen=True)
 class LogProvenance:
     provider: str
@@ -85,6 +97,7 @@ class LogProvenance:
     redacted_byte_count: int
     completeness: str
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": "l9.log-provenance/v1",
@@ -105,11 +118,15 @@ class LogProvenance:
             "completeness": self.completeness,
             "limitations": list(self.limitations),
         }
+
+
 @dataclass(frozen=True)
 class AcquiredLog:
     evidence: CIRunEvidence
     provenance: LogProvenance
     redacted_text: str
+
+
 @dataclass(frozen=True)
 class AcquisitionReport:
     acquisition_id: str
@@ -125,10 +142,10 @@ class AcquisitionReport:
     started_at: str
     completed_at: str
     limitations: tuple[str, ...]
+
     def as_dict(self) -> dict[str, Any]:
         complete_count = sum(
-            item.log_completeness == "complete"
-            for item in self.evidence
+            item.log_completeness == "complete" for item in self.evidence
         )
         return {
             "schema_version": "l9.acquisition-report/v1",
@@ -145,9 +162,6 @@ class AcquisitionReport:
             "terminal_state": self.terminal_state,
             "started_at": self.started_at,
             "completed_at": self.completed_at,
-            "evidence": [
-                item.as_dict()
-                for item in self.evidence
-            ],
+            "evidence": [item.as_dict() for item in self.evidence],
             "limitations": list(self.limitations),
         }

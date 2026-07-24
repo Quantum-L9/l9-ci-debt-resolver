@@ -1,14 +1,16 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import re
+from dataclasses import dataclass
+
+
 @dataclass(frozen=True)
 class RedactionResult:
     text: str
     classes: tuple[str, ...]
-_PATTERN_DEFINITIONS: tuple[
-    tuple[str, re.Pattern[str]],
-    ...
-] = (
+
+
+_PATTERN_DEFINITIONS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "PRIVATE_KEY",
         re.compile(
@@ -31,9 +33,7 @@ _PATTERN_DEFINITIONS: tuple[
     ),
     (
         "BEARER_TOKEN",
-        re.compile(
-            r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}"
-        ),
+        re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/=-]{12,}"),
     ),
     (
         "ASSIGNMENT_SECRET",
@@ -73,16 +73,17 @@ _PATTERN_DEFINITIONS: tuple[
         ),
     ),
 )
+
+
 class LogRedactor:
     def __init__(
         self,
         repository_root: str | None = None,
     ) -> None:
         self._repository_root = (
-            repository_root.rstrip("/\\")
-            if repository_root
-            else None
+            repository_root.rstrip("/\\") if repository_root else None
         )
+
     def redact(self, text: str) -> RedactionResult:
         value = text
         classes: set[str] = set()

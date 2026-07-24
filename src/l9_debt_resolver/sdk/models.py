@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
+
+
 @dataclass(frozen=True)
 class SDKSnapshot:
     snapshot_id: str
@@ -8,6 +11,8 @@ class SDKSnapshot:
     revision: str
     capability_profile: tuple[str, ...]
     limitations: tuple[str, ...]
+
+
 @dataclass(frozen=True)
 class SDKRepositoryEntity:
     entity_id: str
@@ -18,12 +23,16 @@ class SDKRepositoryEntity:
     symbol: str | None
     language: str | None
     metadata: dict[str, Any]
+
+
 @dataclass(frozen=True)
 class SDKContractReference:
     contract_id: str
     kind: str
     subject_entity_ids: tuple[str, ...]
     metadata: dict[str, Any]
+
+
 @dataclass(frozen=True)
 class SDKFindingReference:
     finding_id: str
