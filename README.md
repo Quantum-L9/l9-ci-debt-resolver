@@ -1,7 +1,15 @@
 # Quantum-L9 CI Debt Resolver
+
 `l9-ci-debt-resolver` is the evidence-first failure-diagnosis and bounded
-recovery component of the Quantum-L9 CI constellation.
+recovery component of the Quantum-L9 CI constellation. It retrieves the actual
+failed CI logs, correlates them with SDK-owned repository knowledge, applies
+bounded and validated local remediation, drives an authorized remote repair
+loop, emits privacy-safe Intelligence feedback, and — when direct remediation
+is not eligible — delegates proposal generation to PR_Repair while retaining
+all mutation authority.
+
 ## Authority model
+
 ```text
 actual failed CI log
         ↓
@@ -10,49 +18,36 @@ failed job metadata
 SDK repository evidence
         ↓
 historical context
+```
 
 Historical context may support diagnosis. It cannot override current failed
 logs.
 
-RESOLVER-P0
+## Install and local gate
 
-P0 establishes:
-
-* repository ownership boundaries;
-* deterministic canonical identities;
-* typed CI evidence;
-* typed failure classifications;
-* resolver attempt lifecycle;
-* deterministic terminal states;
-* corpus-safe resolution-event contracts;
-* schema validation;
-* package, CLI, tests, and CI foundations.
-
-P0 does not acquire logs, inspect repositories, remediate code, mutate Git,
-observe reruns, deliver Intelligence feedback, or delegate to PR_Repair.
-
-Validation
-
+```bash
 python -m pip install -e '.[dev]'
-pytest
 ruff check .
 mypy src
+pytest
 l9-debt-resolver capabilities
+```
 
-Contract validation
+Ruff is configured in `ruff.toml` (the single source of truth, coherent with
+the `target-version` and `line-length` in `pyproject.toml`). The mypy gate's
+type-stub packages are pinned in `requirements-ci.txt`
+(`python -m pip install -r requirements-ci.txt`), keeping the type-checking
+toolchain reproducible and separate from the runtime package.
 
-l9-debt-resolver validate \
-  ci-run-evidence \
-  evidence.json
+There is no service to run: the resolver is a library plus a CLI
+(`l9-debt-resolver`).
 
-Success invariant
+## Success invariant
 
 Local diagnosis, local validation, commit creation, and push do not prove a
-failure is resolved.
+failure is resolved. Only a successful CI rerun may produce `clean`.
 
-Only a successful CI rerun may produce clean.
-
-Prohibited behavior
+## Prohibited behavior
 
 The Resolver does not:
 
@@ -65,14 +60,41 @@ The Resolver does not:
 * push protected branches;
 * force-push;
 * merge automatically.
+
+## RESOLVER-P0: contract foundation
+
+P0 establishes:
+
+* repository ownership boundaries;
+* deterministic canonical identities;
+* typed CI evidence;
+* typed failure classifications;
+* the resolver attempt lifecycle;
+* deterministic terminal states;
+* corpus-safe resolution-event contracts;
+* schema validation;
+* the package, CLI, tests, and CI foundations.
+
+P0 does not acquire logs, inspect repositories, remediate code, mutate Git,
+observe reruns, deliver Intelligence feedback, or delegate to PR_Repair.
+
+### Contract validation
+
+```bash
+l9-debt-resolver validate ci-run-evidence evidence.json
+```
+
 ## RESOLVER-P1: failed-log acquisition
-The resolver now retrieves:
-# 1. workflow-run metadata;
-# 2. all failed jobs using bounded pagination;
-# 3. each failed job log independently;
-# 4. response provenance and content hashes;
-# 5. a completeness assessment;
-# 6. redacted evidence suitable for local persistence.
+
+The resolver retrieves:
+
+1. workflow-run metadata;
+2. all failed jobs using bounded pagination;
+3. each failed job log independently;
+4. response provenance and content hashes;
+5. a completeness assessment;
+6. redacted evidence suitable for local persistence.
+
 ```text
 GitHub Actions
       ↓
@@ -88,45 +110,45 @@ secret and path redaction
       ↓
 typed CI evidence
       ↓
-evidence_ready
-or
-insufficient_log_evidence
+evidence_ready | insufficient_log_evidence
+```
 
-Authentication
+### Authentication
 
 Set one of:
 
+```bash
 export GITHUB_TOKEN='...'
 export GH_TOKEN='...'
+```
 
 Tokens are read from the environment and are never persisted.
 
-Acquire one run
+### Acquire one run
 
+```bash
 l9-debt-resolver acquire-github-run \
   --repository Quantum-L9/example \
   --run-id 123456789
+```
 
 Exit codes:
 
-* 0: evidence is ready or the run is clean;
-* 2: evidence is incomplete and remediation is prohibited;
+* `0`: evidence is ready or the run is clean;
+* `2`: evidence is incomplete and remediation is prohibited;
 * nonzero exception: provider or contract failure.
 
-Privacy
+### Privacy
 
-Raw logs are ephemeral. The resolver may persist only:
+Raw logs are ephemeral. The resolver may persist only redacted logs, SHA-256
+hashes, typed evidence, provenance, and completeness limitations. It does not
+persist unredacted CI logs.
 
-* redacted logs;
-* SHA-256 hashes;
-* typed evidence;
-* provenance;
-* completeness limitations.
-
-It does not persist unredacted CI logs.
 ## RESOLVER-P2: repository correlation and classification
+
 P2 correlates complete failed-log evidence with an SDK-owned repository
 snapshot.
+
 ```text
 complete failed log
        ↓
@@ -144,96 +166,39 @@ CI root-cause signals
 classification trace
        ↓
 automatic | approval_required | unsupported
+```
 
-SDK authority boundary
+### SDK authority boundary
 
 The resolver does not manufacture SDK snapshot, entity, contract, finding,
-validation-plan, or validation-result identities.
+validation-plan, or validation-result identities. The included document adapter
+consumes a public SDK exchange document. It exists for integration tests,
+offline execution, and compatibility while the SDK transport is deployed.
 
-The included document adapter consumes a public SDK exchange document. It
-exists for integration tests, offline execution, and compatibility while the
-SDK transport is deployed.
+### Correlate and classify
 
-Correlate and classify
-
+```bash
 l9-debt-resolver correlate-classify \
   --evidence-bundle evidence-bundle.json \
   --SDK-knowledge sdk-knowledge.json
+```
 
-The command exits with:
+The command exits with `0` when a supported category is classified, `2` when
+the result is unsupported, and another nonzero code for invalid evidence or SDK
+failures.
 
-* 0 when a supported category is classified;
-* 2 when the result is unsupported;
-* another nonzero code for invalid evidence or SDK failures.
+### Classification safety
 
-Classification safety
+Automatic eligibility requires complete failed-log evidence, an explicit
+failed-log tool or failure signature, confidence of at least 0.90, no
+conflicting high-confidence category, and a category permitted for automatic
+remediation. Infrastructure failures remain unsupported. Security failures
+require approval.
 
-Automatic eligibility requires:
-
-* complete failed-log evidence;
-* an explicit failed-log tool or failure signature;
-* confidence of at least 0.90;
-* no conflicting high-confidence category;
-* a category permitted for automatic remediation.
-
-Infrastructure failures remain unsupported. Security failures require
-approval.
-## RESOLVER-P2: repository correlation and classification
-P2 correlates complete failed-log evidence with an SDK-owned repository
-snapshot.
-```text
-complete failed log
-       ↓
-safe stack-frame extraction
-       ↓
-SDK repository snapshot
-       ↓
-canonical repository entities
-       ├── related tests
-       ├── applicable contracts
-       └── canonical findings
-       ↓
-CI root-cause signals
-       ↓
-classification trace
-       ↓
-automatic | approval_required | unsupported
-
-SDK authority boundary
-
-The resolver does not manufacture SDK snapshot, entity, contract, finding,
-validation-plan, or validation-result identities.
-
-The included document adapter consumes a public SDK exchange document. It
-exists for integration tests, offline execution, and compatibility while the
-SDK transport is deployed.
-
-Correlate and classify
-
-l9-debt-resolver correlate-classify \
-  --evidence-bundle evidence-bundle.json \
-  --SDK-knowledge sdk-knowledge.json
-
-The command exits with:
-
-* 0 when a supported category is classified;
-* 2 when the result is unsupported;
-* another nonzero code for invalid evidence or SDK failures.
-
-Classification safety
-
-Automatic eligibility requires:
-
-* complete failed-log evidence;
-* an explicit failed-log tool or failure signature;
-* confidence of at least 0.90;
-* no conflicting high-confidence category;
-* a category permitted for automatic remediation.
-
-Infrastructure failures remain unsupported. Security failures require
-approval.
 ## RESOLVER-P3: bounded remediation and validation
+
 P3 applies only evidence-supported local changes.
+
 ```text
 classification trace
         ↓
@@ -254,43 +219,36 @@ SDK validation plan
         ↓
 pass → commit local transaction
 fail → rollback
+```
 
-Execute an offline remediation
+### Execute an offline remediation
 
+```bash
 l9-debt-resolver remediate-offline \
   --workspace /path/to/repository \
   --classification-trace classification-trace.json \
   --remediation-plan remediation-plan.json \
-  --sdk-validation sdk-validation.json
+  --SDK-validation sdk-validation.json
+```
 
 P3 never creates branches, pushes commits, observes reruns, or merges changes.
 
-Protected paths
+### Protected paths
 
-P3 blocks changes under:
+P3 blocks changes under `.git/`, `.github/workflows/`, `.l9/`, `schemas/`,
+`security/`, `compliance/`, and `governance/`. These paths have no P3 override.
 
-* .git/
-* .github/workflows/
-* .l9/
-* schemas/
-* security/
-* compliance/
-* governance/
+### Validation behavior
 
-These paths have no P3 override.
+A remediation is retained only when the original failed command or equivalent
+passes, targeted tests pass, affected contracts pass, the graph delta matches
+the approved plan, and the SDK returns a canonical passing validation result.
 
-Validation behavior
-
-A remediation is retained only when:
-
-* the original failed command or equivalent passes;
-* targeted tests pass;
-* affected contracts pass;
-* graph delta matches the approved plan;
-* the SDK returns a canonical passing validation result.
 ## RESOLVER-P4: remote resolution loop
+
 P4 moves a validated local remediation onto an authorized repair branch and
 observes the resulting CI run.
+
 ```text
 validated local remediation
         ↓
@@ -313,13 +271,16 @@ same fingerprint    → repeated_failure
 different failure   → new_failure
 timeout             → rerun_timeout
 attempt exhaustion  → attempt_limit_reached
+```
 
-P4 never force-pushes, pushes protected branches, creates tags, or merges.
-
-The rerun failure must pass through the normal P1 and P2 evidence pipeline to
+P4 never force-pushes, pushes protected branches, creates tags, or merges. The
+rerun failure must pass through the normal P1 and P2 evidence pipeline to
 produce the observed failure fingerprint.
+
 ## RESOLVER-P5: Intelligence feedback
+
 P5 emits privacy-safe resolution outcomes to the Intelligence subsystem.
+
 ```text
 resolution outcome
         ↓
@@ -337,59 +298,51 @@ bounded delivery retries
         ├── delivered
         ├── duplicate
         └── dead_letter
+```
 
-Feedback payloads include
+Feedback payloads include the failure fingerprint and category, confidence
+bucket, terminal state, repeated-failure indicator, attempt number, remediation
+class, changed-file count, changed-line bucket, validation outcome, canonical
+SDK finding and contract IDs, capability profile, and hashed provenance.
 
-* failure fingerprint and category;
-* confidence bucket;
-* terminal state;
-* repeated-failure indicator;
-* attempt number;
-* remediation class;
-* changed-file count;
-* changed-line bucket;
-* validation outcome;
-* canonical SDK finding and contract IDs;
-* capability profile;
-* hashed provenance.
+Feedback payloads exclude raw logs, source code, patches and diffs, file paths,
+branch names, commit messages, credentials, developer identity, and raw
+repository names.
 
-Feedback payloads exclude
+### JSON-file delivery
 
-* raw logs;
-* source code;
-* patches and diffs;
-* file paths;
-* branch names;
-* commit messages;
-* credentials;
-* developer identity;
-* raw repository names.
-
-JSON-file delivery
-
+```bash
 l9-debt-resolver publish-feedback \
   --event feedback-event.json \
   --outbox .resolver-feedback-outbox \
   --transport json-file \
   --destination feedback-export
+```
 
-HTTPS delivery
+### HTTPS delivery
 
+```bash
 export L9_FEEDBACK_TOKEN='...'
 l9-debt-resolver publish-feedback \
   --event feedback-event.json \
   --outbox .resolver-feedback-outbox \
   --transport https \
   --destination https://intelligence.example/api/v1/events
+```
 
-Drain pending feedback
+### Drain pending feedback
 
-l9-debt-resolver drain-feedback-outbox \
+```bash
+l9-debt-resolver drain-feedback \
   --outbox .resolver-feedback-outbox \
   --transport json-file \
   --destination feedback-export
+```
+
 ## RESOLVER-P6: constrained PR_Repair delegation
+
 P6 delegates proposal generation only.
+
 ```text
 unsupported or approval-required classification
         ↓
@@ -408,32 +361,19 @@ Resolver remediation plan
 normal P3 validation and rollback
         ↓
 normal P4 branch, push, rerun, and terminal states
+```
 
-PR_Repair receives
+PR_Repair receives the failure fingerprint, classification category and
+confidence bucket, normalized failure signatures, canonical SDK entity,
+finding, contract, and test IDs, the capability profile, path tokens,
+remediation bounds, and a callback nonce.
 
-* failure fingerprint;
-* classification category and confidence bucket;
-* normalized failure signatures;
-* canonical SDK entity, finding, contract, and test IDs;
-* capability profile;
-* path tokens;
-* remediation bounds;
-* callback nonce.
+PR_Repair does not receive raw logs, source files, repository paths, patches or
+diffs, credentials, repository owner or name, branch or commit data, or
+developer identity.
 
-PR_Repair does not receive
-
-* raw logs;
-* source files;
-* repository paths;
-* patches or diffs;
-* credentials;
-* repository owner or name;
-* branch or commit data;
-* developer identity.
-
-Authority remains with Resolver
+### Authority remains with Resolver
 
 PR_Repair cannot mutate a repository, execute validation, push a branch,
 trigger CI, merge changes, alter attempt limits, or emit terminal states.
-
 Accepted proposals re-enter the normal RESOLVER-P3 pipeline.
