@@ -3,10 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import PurePosixPath
-
-from l9_debt_resolver.contracts.models import (
-    FailureClassification,
-)
+from typing import Protocol
 
 from .errors import (
     ApprovalRequiredError,
@@ -15,6 +12,26 @@ from .errors import (
     RemediationNotEligibleError,
 )
 from .models import RemediationPlan
+
+
+class ClassificationView(Protocol):
+    """Fields the remediation policy reads from a classification.
+
+    Satisfied structurally by both the contract-level ``FailureClassification``
+    and the richer ``ClassificationTrace``, so the policy can be applied to
+    either without duplicating a conversion.
+    """
+
+    @property
+    def classification_id(self) -> str: ...
+    @property
+    def failure_fingerprint(self) -> str: ...
+    @property
+    def repository_snapshot_id(self) -> str: ...
+    @property
+    def evidence_ids(self) -> tuple[str, ...]: ...
+    @property
+    def remediation_eligibility(self) -> str: ...
 
 
 @dataclass(frozen=True)
@@ -49,7 +66,7 @@ ALLOWED_REMEDIATION_CLASSES = {
 
 def validate_remediation_policy(
     *,
-    classification: FailureClassification,
+    classification: ClassificationView,
     plan: RemediationPlan,
     bounds: RemediationBounds,
     now: datetime | None = None,

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from collections.abc import Iterable
+from typing import Any
 
 from l9_debt_resolver.contracts.canonical import (
     namespaced_identity,
@@ -222,7 +224,7 @@ _ALLOWED_CATEGORIES = {
 
 
 def _metadata_categories(
-    metadata_values: object,
+    metadata_values: Iterable[dict[str, Any]],
 ) -> tuple[str, ...]:
     categories: set[str] = set()
     for metadata in metadata_values:

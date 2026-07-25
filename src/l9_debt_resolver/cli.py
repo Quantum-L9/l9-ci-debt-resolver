@@ -9,6 +9,10 @@ from typing import Any
 from .acquisition.service import (
     FailedLogAcquisitionService,
 )
+from .classification.models import (
+    ClassificationSignal,
+    ClassificationTrace,
+)
 from .contracts.schema import SchemaValidator
 from .correlation.loader import load_evidence_bundle
 from .feedback.delivery import FeedbackDeliveryService
@@ -16,6 +20,7 @@ from .feedback.file_transport import JSONFileFeedbackTransport
 from .feedback.http_transport import HTTPSFeedbackTransport
 from .feedback.loader import load_feedback_event
 from .feedback.outbox import FeedbackOutbox
+from .feedback.protocol import FeedbackTransport
 from .providers.github.provider import (
     GitHubActionsProvider,
 )
@@ -119,6 +124,57 @@ def build_parser() -> argparse.ArgumentParser:
         "--api-url",
         default="https://api.github.com",
     )
+
+    remediate = commands.add_parser("remediate-offline")
+    remediate.add_argument(
+        "--workspace",
+        required=True,
+        type=Path,
+    )
+    remediate.add_argument(
+        "--classification-trace",
+        required=True,
+        type=Path,
+    )
+    remediate.add_argument(
+        "--remediation-plan",
+        required=True,
+        type=Path,
+    )
+    remediate.add_argument(
+        "--SDK-validation",
+        required=True,
+        type=Path,
+    )
+
+    for feedback_command in ("publish-feedback", "drain-feedback"):
+        feedback = commands.add_parser(feedback_command)
+        if feedback_command == "publish-feedback":
+            feedback.add_argument(
+                "--event",
+                required=True,
+                type=Path,
+            )
+        feedback.add_argument(
+            "--outbox",
+            required=True,
+            type=Path,
+        )
+        feedback.add_argument(
+            "--transport",
+            choices=["json-file", "https"],
+            default="json-file",
+        )
+        feedback.add_argument(
+            "--destination",
+            required=True,
+            help="Directory for json-file transport, or endpoint URL for https",
+        )
+        feedback.add_argument(
+            "--token-environment",
+            default="L9_FEEDBACK_TOKEN",
+            help="Environment variable holding the bearer token for https",
+        )
     return parser
 
 
@@ -143,34 +199,32 @@ async def acquire_github_run(
 
 def _load_classification_trace(
     path: Path,
-):
-    from .classification.models import ClassificationTrace
-    from .contracts.models import FailureClassification
-
+) -> ClassificationTrace:
     value = json.loads(path.read_text(encoding="utf-8"))
-    classification = FailureClassification(
+    matched_signals = tuple(
+        ClassificationSignal(
+            signal=str(signal["signal"]),
+            category=str(signal["category"]),
+            weight=float(signal["weight"]),
+            source=str(signal["source"]),
+        )
+        for signal in value.get("matched_signals", [])
+    )
+    return ClassificationTrace(
         classification_id=value["classification_id"],
         failure_fingerprint=value["failure_fingerprint"],
         category=value["category"],
         confidence=float(value["confidence"]),
         evidence_ids=tuple(value["evidence_ids"]),
+        matched_signals=matched_signals,
         failed_command=value.get("failed_command"),
         repository_snapshot_id=value["repository_snapshot_id"],
-        affected_entities=tuple(value["correlated_entity_ids"]),
+        affected_entities=tuple(value.get("affected_entities", ())),
+        related_tests=tuple(value.get("related_tests", ())),
+        applicable_contracts=tuple(value.get("applicable_contracts", ())),
+        correlated_finding_ids=tuple(value.get("correlated_finding_ids", ())),
         remediation_eligibility=value["remediation_eligibility"],
-        limitations=tuple(value["limitations"]),
-    )
-    return ClassificationTrace(
-        trace_id=value["trace_id"],
-        classification=classification,
-        correlation_id=value["correlation_id"],
-        correlated_entity_ids=tuple(value["correlated_entity_ids"]),
-        correlated_finding_ids=tuple(value["correlated_finding_ids"]),
-        related_test_ids=tuple(value["related_test_ids"]),
-        applicable_contract_ids=tuple(value["applicable_contract_ids"]),
-        matched_signatures=tuple(value["matched_signatures"]),
-        conflicting_signatures=tuple(value["conflicting_signatures"]),
-        limitations=tuple(value["limitations"]),
+        limitations=tuple(value.get("limitations", ())),
     )
 
 
@@ -197,7 +251,7 @@ def _feedback_transport(
     transport_name: str,
     destination: str,
     token_environment: str,
-):
+) -> FeedbackTransport:
     import os
 
     if transport_name == "json-file":
@@ -290,6 +344,40 @@ def main() -> int:
             }
             else 2
         )
+    if arguments.command == "remediate-offline":
+        remediation_result = asyncio.run(
+            remediate_offline(
+                workspace=arguments.workspace,
+                classification_trace_path=(arguments.classification_trace),
+                remediation_plan_path=(arguments.remediation_plan),
+                SDK_validation_path=(arguments.SDK_validation),
+            )
+        )
+        emit(remediation_result)
+        return 0 if remediation_result["status"] == "validated" else 2
+    if arguments.command == "publish-feedback":
+        receipt = asyncio.run(
+            publish_feedback(
+                event_path=arguments.event,
+                outbox_path=arguments.outbox,
+                transport_name=arguments.transport,
+                destination=arguments.destination,
+                token_environment=(arguments.token_environment),
+            )
+        )
+        emit(receipt)
+        return 0 if receipt.get("status") in {"delivered", "duplicate"} else 2
+    if arguments.command == "drain-feedback":
+        receipts = asyncio.run(
+            drain_feedback(
+                outbox_path=arguments.outbox,
+                transport_name=arguments.transport,
+                destination=arguments.destination,
+                token_environment=(arguments.token_environment),
+            )
+        )
+        emit(receipts)
+        return 0
     schema_path = schema_root() / f"{arguments.schema}.schema.json"
     document = json.loads(arguments.document.read_text(encoding="utf-8"))
     SchemaValidator(schema_path).validate(document)

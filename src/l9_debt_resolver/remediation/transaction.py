@@ -74,12 +74,12 @@ class WorkspaceTransaction:
                     f"expected text must occur exactly once in "
                     f"{operation.path}; found {occurrences}"
                 )
-            updated = text.replace(
+            updated_text = text.replace(
                 operation.expected_text,
                 operation.replacement_text,
                 1,
             )
-            staged[target] = updated.encode("utf-8")
+            staged[target] = updated_text.encode("utf-8")
         changes = []
         for target, updated in sorted(
             staged.items(),

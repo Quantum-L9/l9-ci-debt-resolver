@@ -1,0 +1,10 @@
+# CI type-checking toolchain — kept separate from the runtime package so the
+# `mypy src` gate is reproducible and decoupled from the library's optional
+# [dev] extra (CI and core code are separate concerns).
+#
+# Includes mypy and the type-stub packages ("mypy plugins") for the project's
+# declared third-party dependencies, so strict type-checking has stubs for
+# every import it may reach.
+mypy>=1.11,<2
+types-PyYAML>=6.0,<7
+types-jsonschema>=4.23,<5

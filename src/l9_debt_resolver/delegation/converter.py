@@ -38,7 +38,7 @@ def convert_proposal_to_remediation_plan(
 ) -> RemediationPlan:
     if proposal.status != "proposed":
         raise DelegationProposalError("unsupported response cannot be converted")
-    classification = classification_trace.classification
+    classification = classification_trace
     evidence_hash_to_id = {
         stable_hash(evidence_id): evidence_id
         for evidence_id in (classification.evidence_ids)
@@ -130,9 +130,7 @@ def convert_proposal_to_remediation_plan(
         operations=tuple(operations),
         expected_changed_paths=expected_paths,
         expected_package_boundaries=(),
-        expected_contract_ids=tuple(
-            sorted(classification_trace.applicable_contract_ids)
-        ),
+        expected_contract_ids=tuple(sorted(classification_trace.applicable_contracts)),
         expected_dependency_edges=(),
         validation_plan_id=validation_plan_id,
         approval=None,

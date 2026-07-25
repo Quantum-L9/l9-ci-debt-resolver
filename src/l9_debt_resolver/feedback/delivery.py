@@ -180,7 +180,7 @@ class FeedbackDeliveryService:
     ) -> float:
         exponential = min(
             self._maximum_delay,
-            self._initial_delay * (2 ** (attempt_number - 1)),
+            self._initial_delay * (2.0 ** (attempt_number - 1)),
         )
         deterministic_fraction = (int(event.event_id[-8:], 16) % 1000) / 1000.0
         jitter = min(

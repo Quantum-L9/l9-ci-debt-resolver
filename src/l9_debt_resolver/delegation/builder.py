@@ -46,7 +46,7 @@ def build_pr_repair_request(
     PRRepairRequest,
     dict[str, str],
 ]:
-    classification = classification_trace.classification
+    classification = classification_trace
     if classification.remediation_eligibility not in {
         "approval_required",
         "unsupported",
@@ -103,19 +103,20 @@ def build_pr_repair_request(
         repository_context={
             "snapshot_id_hash": stable_hash(correlation.repository_snapshot_id),
             "entity_ids": [
-                reference.id for reference in (correlation.entity_references)
+                reference.entity_id for reference in (correlation.repository_entities)
             ][:100],
             "finding_ids": [
-                reference.id for reference in (correlation.finding_references)
+                reference.finding_id for reference in (correlation.correlated_findings)
             ][:100],
             "contract_ids": [
-                reference.id for reference in (correlation.contract_references)
+                reference.contract_id
+                for reference in (correlation.applicable_contracts)
             ][:100],
             "related_test_ids": [
-                reference.id for reference in (correlation.related_test_references)
+                reference.entity_id for reference in (correlation.related_tests)
             ][:100],
             "language_families": list(
-                sorted({frame.framework for frame in (correlation.stack_frames)})
+                sorted({frame.language_family for frame in (correlation.stack_frames)})
             ),
             "capability_profile": list(correlation.capability_profile),
             "allowed_path_tokens": list(sorted(token_map)),

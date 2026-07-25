@@ -51,6 +51,7 @@ class RepositoryCorrelation:
     correlation_id: str
     evidence_id: str
     repository_snapshot_id: str
+    capability_profile: tuple[str, ...]
     stack_frames: tuple[StackFrame, ...]
     repository_entities: tuple[SDKRepositoryEntity, ...]
     related_tests: tuple[SDKRepositoryEntity, ...]
@@ -65,6 +66,7 @@ class RepositoryCorrelation:
             "correlation_id": self.correlation_id,
             "evidence_id": self.evidence_id,
             "repository_snapshot_id": self.repository_snapshot_id,
+            "capability_profile": list(self.capability_profile),
             "stack_frames": [frame.as_dict() for frame in self.stack_frames],
             "repository_entities": [
                 {

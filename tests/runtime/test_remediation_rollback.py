@@ -7,10 +7,11 @@ from pathlib import Path
 import pytest
 
 from l9_debt_resolver.classification.models import (
+    ClassificationSignal,
     ClassificationTrace,
 )
-from l9_debt_resolver.contracts.models import (
-    FailureClassification,
+from l9_debt_resolver.remediation.errors import (
+    ValidationFailedError,
 )
 from l9_debt_resolver.remediation.models import (
     RemediationPlan,
@@ -25,28 +26,27 @@ from l9_debt_resolver.validation.json_gateway import (
 
 
 def trace() -> ClassificationTrace:
-    classification = FailureClassification(
+    return ClassificationTrace(
         classification_id=("classification_" + "a" * 64),
         failure_fingerprint=("failure_" + "b" * 64),
         category="test_failure",
         confidence=0.95,
         evidence_ids=("evidence_" + "c" * 64,),
+        matched_signals=(
+            ClassificationSignal(
+                signal="1 failed",
+                category="test_failure",
+                weight=0.95,
+                source="failed_log",
+            ),
+        ),
         failed_command="pytest",
         repository_snapshot_id="snapshot-1",
         affected_entities=("entity-1",),
-        remediation_eligibility="automatic",
-        limitations=(),
-    )
-    return ClassificationTrace(
-        trace_id=("classification_trace_" + "d" * 64),
-        classification=classification,
-        correlation_id=("correlation_" + "e" * 64),
-        correlated_entity_ids=("entity-1",),
+        related_tests=("test-1",),
+        applicable_contracts=("contract-1",),
         correlated_finding_ids=(),
-        related_test_ids=("test-1",),
-        applicable_contract_ids=("contract-1",),
-        matched_signatures=("1 failed",),
-        conflicting_signatures=(),
+        remediation_eligibility="automatic",
         limitations=(),
     )
 
@@ -125,7 +125,7 @@ async def test_validation_failure_rolls_back(
         encoding="utf-8",
     )
     gateway = JSONSDKValidationGateway(document_path=SDK_path)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationFailedError):
         await RemediationService(validation_gateway=gateway).execute(
             workspace_root=tmp_path,
             classification_trace=trace(),
