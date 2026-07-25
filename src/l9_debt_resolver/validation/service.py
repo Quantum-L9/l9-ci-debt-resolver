@@ -37,12 +37,12 @@ class ValidationService:
         )
         step_results = []
         for step in SDK_plan.steps:
-            result = await self._gateway.execute_validation_step(
+            step_result = await self._gateway.execute_validation_step(
                 workspace_root=workspace_root,
                 step=step,
             )
-            step_results.append(result)
-            if result.result != "passed":
+            step_results.append(step_result)
+            if step_result.result != "passed":
                 break
         graph_delta = await self._gateway.calculate_graph_delta(
             repository_snapshot_id=(remediation_plan.repository_snapshot_id),

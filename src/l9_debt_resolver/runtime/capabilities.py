@@ -44,8 +44,10 @@ def resolver_capabilities() -> dict[str, Any]:
         "limitations": [
             "PR_Repair may generate proposals only.",
             "Resolver retains all mutation and validation authority.",
-            "Resolver retains branch, push, rerun, attempt, and terminal-state authority.",
-            "Raw logs, source content, paths, patches, credentials, and identity are excluded from delegation.",
+            "Resolver retains branch, push, rerun, attempt, and "
+            "terminal-state authority.",
+            "Raw logs, source content, paths, patches, credentials, and "
+            "identity are excluded from delegation.",
             "Automatic merge remains prohibited.",
         ],
     }

@@ -46,7 +46,7 @@ def stable_text_hash(value: str) -> str:
 
 
 def _normalize(value: object) -> Any:
-    if is_dataclass(value):
+    if is_dataclass(value) and not isinstance(value, type):
         return _normalize(asdict(value))
     if isinstance(value, Enum):
         return _normalize(value.value)

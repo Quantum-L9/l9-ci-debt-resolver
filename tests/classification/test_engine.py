@@ -16,6 +16,7 @@ def correlation() -> RepositoryCorrelation:
         correlation_id="correlation_" + "c" * 64,
         evidence_id="evidence_" + "a" * 64,
         repository_snapshot_id="snapshot-1",
+        capability_profile=("python",),
         stack_frames=(),
         repository_entities=(),
         related_tests=(),

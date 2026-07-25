@@ -9,6 +9,7 @@
     "correlation_id",
     "evidence_id",
     "repository_snapshot_id",
+    "capability_profile",
     "stack_frames",
     "repository_entities",
     "related_tests",
@@ -33,6 +34,15 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 500
+    },
+    "capability_profile": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "uniqueItems": true
     },
     "stack_frames": {
       "type": "array",

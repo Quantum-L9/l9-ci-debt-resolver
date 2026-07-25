@@ -47,7 +47,7 @@ class RemediationService:
         classification_trace: ClassificationTrace,
         remediation_plan: RemediationPlan,
     ) -> RemediationExecutionResult:
-        classification = classification_trace.classification
+        classification = classification_trace
         validate_remediation_policy(
             classification=classification,
             plan=remediation_plan,

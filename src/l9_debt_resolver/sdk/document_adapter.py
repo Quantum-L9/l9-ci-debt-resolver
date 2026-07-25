@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -302,7 +303,7 @@ def _metadata(
 
 
 def _sorted_entities(
-    entities: object,
+    entities: Iterable[SDKRepositoryEntity],
 ) -> tuple[SDKRepositoryEntity, ...]:
     unique = {entity.entity_id: entity for entity in entities}
     return tuple(

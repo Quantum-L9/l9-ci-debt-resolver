@@ -64,7 +64,7 @@ def build_feedback_event(
     graph_delta_accepted: bool | None,
     remediation_plan_id: str | None,
 ) -> FeedbackEvent:
-    classification = classification_trace.classification
+    classification = classification_trace
     event_type = TERMINAL_EVENT_TYPES.get(
         resolution_outcome.terminal_state,
         "unsupported",
@@ -127,27 +127,35 @@ def build_feedback_event(
         correlation={
             "capability_profile": list(sorted(set(correlation.capability_profile))),
             "finding_ids": list(
-                sorted({reference.id for reference in (correlation.finding_references)})
+                sorted(
+                    {
+                        reference.finding_id
+                        for reference in (correlation.correlated_findings)
+                    }
+                )
             ),
             "contract_ids": list(
                 sorted(
-                    {reference.id for reference in (correlation.contract_references)}
+                    {
+                        reference.contract_id
+                        for reference in (correlation.applicable_contracts)
+                    }
                 )
             ),
             "language_families": list(
-                sorted({frame.framework for frame in (correlation.stack_frames)})
+                sorted({frame.language_family for frame in (correlation.stack_frames)})
             ),
-            "entity_count": len(correlation.entity_references),
-            "related_test_count": len(correlation.related_test_references),
+            "entity_count": len(correlation.repository_entities),
+            "related_test_count": len(correlation.related_tests),
         },
         provenance={
             "snapshot_id_hash": stable_hash(correlation.repository_snapshot_id),
-            "evidence_id_hashes": list(
-                sorted(
-                    stable_hash(value)
-                    for value in (classification.evidence_ids)
-                    if stable_hash(value) is not None
+            "evidence_id_hashes": sorted(
+                hashed
+                for hashed in (
+                    stable_hash(value) for value in classification.evidence_ids
                 )
+                if hashed is not None
             ),
             "classification_id_hash": (stable_hash(classification.classification_id)),
             "remediation_plan_id_hash": (stable_hash(remediation_plan_id)),

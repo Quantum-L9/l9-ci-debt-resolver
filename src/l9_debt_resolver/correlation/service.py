@@ -84,6 +84,7 @@ class RepositoryCorrelationService:
             ),
             evidence_id=bundle.evidence.evidence_id,
             repository_snapshot_id=snapshot.snapshot_id,
+            capability_profile=tuple(sorted(snapshot.capability_profile)),
             stack_frames=frames,
             repository_entities=tuple(
                 sorted(
