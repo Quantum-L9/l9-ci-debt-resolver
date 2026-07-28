@@ -7,4 +7,4 @@
 # every import it may reach.
 mypy>=1.11,<2
 types-PyYAML>=6.0,<7
-types-jsonschema>=4.23,<5
+types-jsonschema>=4.26.0.20260518,<5
