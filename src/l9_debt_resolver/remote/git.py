@@ -168,7 +168,7 @@ class GitRepository:
         )
         stdout, stderr = await process.communicate()
         result = GitResult(
-            exit_code=process.returncode,
+            exit_code=(process.returncode if process.returncode is not None else -1),
             stdout=stdout.decode(
                 "utf-8",
                 errors="replace",

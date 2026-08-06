@@ -1,6 +1,9 @@
 
 Resolver Roadmap
 
+All phases RESOLVER-P0 through RESOLVER-P6 are consolidated and implemented in this repository. The local gate
+(ruff check . && mypy src && pytest) and the per-phase GitHub Actions workflows validate every phase.
+
 RESOLVER-P0 - Contract alignment
 
 Status: Implemented
@@ -18,7 +21,7 @@ Status: Implemented
 
 RESOLVER-P1 - Failed-log acquisition
 
-Status: Planned
+Status: Implemented
 
 * failed-run acquisition
 * failed-job acquisition
@@ -31,7 +34,7 @@ Status: Planned
 
 RESOLVER-P2 - Repository correlation
 
-Status: Planned
+Status: Implemented
 
 * SDK repository snapshots
 * stack-frame extraction
@@ -43,7 +46,7 @@ Status: Planned
 
 RESOLVER-P3 - Bounded validation
 
-Status: Planned
+Status: Implemented
 
 * remediation eligibility
 * approval enforcement
@@ -57,7 +60,7 @@ Status: Planned
 
 RESOLVER-P4 - Remote resolution loop
 
-Status: Planned
+Status: Implemented
 
 * exact revision enforcement
 * expected worktree enforcement
@@ -72,7 +75,7 @@ Status: Planned
 
 RESOLVER-P5 - Intelligence feedback
 
-Status: Planned
+Status: Implemented
 
 * privacy-safe resolution events
 * repository pseudonymization
@@ -85,7 +88,7 @@ Status: Planned
 
 RESOLVER-P6 - PR_Repair delegation
 
-Status: Planned
+Status: Implemented
 
 * proposal-only delegation
 * bounded privacy-safe context

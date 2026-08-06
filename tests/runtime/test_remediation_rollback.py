@@ -7,10 +7,11 @@ from pathlib import Path
 import pytest
 
 from l9_debt_resolver.classification.models import (
+    ClassificationSignal,
     ClassificationTrace,
 )
 from l9_debt_resolver.remediation.errors import (
-    RemediationError,
+    ValidationFailedError,
 )
 from l9_debt_resolver.remediation.models import (
     RemediationPlan,
@@ -31,7 +32,14 @@ def trace() -> ClassificationTrace:
         category="test_failure",
         confidence=0.95,
         evidence_ids=("evidence_" + "c" * 64,),
-        matched_signals=(),
+        matched_signals=(
+            ClassificationSignal(
+                signal="1 failed",
+                category="test_failure",
+                weight=0.95,
+                source="failed_log",
+            ),
+        ),
         failed_command="pytest",
         repository_snapshot_id="snapshot-1",
         affected_entities=("entity-1",),
@@ -73,16 +81,6 @@ def plan(before: str) -> RemediationPlan:
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Known defect: ClassificationTrace has flat fields, but "
-        "remediation_service.py and other consumers read a nonexistent "
-        "`.classification` attribute, so this rollback path raises "
-        "AttributeError before validation. Previously masked by a blind "
-        "`pytest.raises(Exception)`. Fix tracked separately."
-    ),
-    strict=False,
-)
 @pytest.mark.asyncio
 async def test_validation_failure_rolls_back(
     tmp_path: Path,
@@ -127,7 +125,7 @@ async def test_validation_failure_rolls_back(
         encoding="utf-8",
     )
     gateway = JSONSDKValidationGateway(document_path=SDK_path)
-    with pytest.raises(RemediationError):
+    with pytest.raises(ValidationFailedError):
         await RemediationService(validation_gateway=gateway).execute(
             workspace_root=tmp_path,
             classification_trace=trace(),

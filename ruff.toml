@@ -1,0 +1,19 @@
+# Ruff configuration — single source of truth for lint/format.
+#
+# Kept coherent with pyproject.toml: the same `target-version` and
+# `line-length` the project builds and type-checks against. Ruff reads
+# this file in preference to any `[tool.ruff]` table, so the lint
+# configuration lives here and is intentionally absent from pyproject.toml
+# to avoid two competing sources of truth.
+target-version = "py311"
+line-length = 88
+
+[lint]
+select = [
+  "E",
+  "F",
+  "I",
+  "B",
+  "UP",
+  "RUF",
+]

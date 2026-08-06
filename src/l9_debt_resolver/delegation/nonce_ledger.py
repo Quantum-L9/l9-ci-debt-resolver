@@ -28,6 +28,8 @@ class CallbackNonceLedger:
             "consumed",
             {},
         )
+        if not isinstance(consumed, dict):
+            raise ValueError("callback nonce ledger 'consumed' must be an object")
         key = f"{request_id}:{nonce}"
         if key in consumed:
             raise DelegationReplayError("callback nonce has already been consumed")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Protocol
 
@@ -58,7 +59,7 @@ class FailedLogAcquisitionService:
         self,
         provider: AcquisitionProvider,
         *,
-        clock: callable = utc_now,
+        clock: Callable[[], str] = utc_now,
     ) -> None:
         self._provider = provider
         self._clock = clock

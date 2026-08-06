@@ -7,7 +7,7 @@ version = "0.7.0"
 description = "Evidence-first CI failure diagnosis and bounded recovery"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
+license = { text = "Proprietary" }
 authors = [
   { name = "Quantum-L9" }
 ]
@@ -31,18 +31,8 @@ packages = ["src/l9_debt_resolver"]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
 asyncio_mode = "strict"
-[tool.ruff]
-target-version = "py311"
-line-length = 88
-[tool.ruff.lint]
-select = [
-  "E",
-  "F",
-  "I",
-  "B",
-  "UP",
-  "RUF"
-]
+# Ruff configuration lives in ruff.toml (single source of truth); it uses the
+# same target-version and line-length declared here so the two stay coherent.
 [tool.mypy]
 python_version = "3.11"
 strict = true

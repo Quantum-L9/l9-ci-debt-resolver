@@ -21,6 +21,9 @@ from l9_debt_resolver.remote.policy import (
     validate_branch_name,
     validate_push_authorization,
 )
+from l9_debt_resolver.remote.protocol import (
+    RerunProvider,
+)
 from l9_debt_resolver.resolution.models import (
     ResolutionOutcome,
 )
@@ -44,7 +47,7 @@ class RemoteResolutionService:
     def __init__(
         self,
         *,
-        rerun_provider: object,
+        rerun_provider: RerunProvider,
         attempt_ledger: AttemptLedger,
     ) -> None:
         self._rerun_provider = rerun_provider
@@ -68,7 +71,7 @@ class RemoteResolutionService:
         RemoteAttempt,
         ResolutionOutcome,
     ]:
-        classification = classification_trace.classification
+        classification = classification_trace
         attempt_number = self._ledger.next_attempt(classification.failure_fingerprint)
         branch = deterministic_branch_name(
             failure_fingerprint=(classification.failure_fingerprint),

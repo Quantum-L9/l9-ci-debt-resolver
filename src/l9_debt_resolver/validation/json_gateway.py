@@ -53,10 +53,7 @@ class JSONSDKValidationGateway:
             raise ValueError("SDK validation plan is missing")
         if plan.get("repository_snapshot_id") != repository_snapshot_id:
             raise ValueError("SDK validation snapshot mismatch")
-        if (
-            plan.get("classification_id")
-            != classification_trace.classification.classification_id
-        ):
+        if plan.get("classification_id") != classification_trace.classification_id:
             raise ValueError("SDK validation classification mismatch")
         if plan.get("remediation_plan_id") != remediation_plan.plan_id:
             raise ValueError("SDK validation remediation-plan mismatch")
