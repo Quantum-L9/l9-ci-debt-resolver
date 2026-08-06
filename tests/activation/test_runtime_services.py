@@ -53,17 +53,13 @@ async def test_correlation_runtime_execute() -> None:
     assert result.correlation.repository_snapshot_id == "snapshot-1"
     assert result.classification.category == "test_failure"
     document = result.as_dict()
-    assert document["schema_version"] == (
-        "l9.correlation-classification-result/v1"
-    )
+    assert document["schema_version"] == ("l9.correlation-classification-result/v1")
     assert "correlation" in document
     assert "classification" in document
 
 
 def test_diagnosis_service_reexports_runtime() -> None:
-    assert (
-        diagnosis_service.ResolverCorrelationRuntime is ResolverCorrelationRuntime
-    )
+    assert diagnosis_service.ResolverCorrelationRuntime is ResolverCorrelationRuntime
     assert (
         diagnosis_service.CorrelationAndClassificationResult
         is CorrelationAndClassificationResult
@@ -250,9 +246,7 @@ async def test_remote_resolution_execute_happy_path(tmp_path: Path) -> None:
         attempt_number=1,
     )
     expires = (
-        (datetime.now(UTC) + timedelta(hours=1))
-        .isoformat()
-        .replace("+00:00", "Z")
+        (datetime.now(UTC) + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
     )
     authorization = PushAuthorization(
         authorization_id="push_authorization_" + "d" * 44,

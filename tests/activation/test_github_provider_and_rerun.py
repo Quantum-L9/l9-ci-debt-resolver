@@ -171,9 +171,7 @@ def _failed_job() -> FailedJob:
         completed_at=None,
         runner_name=None,
         labels=(),
-        failed_steps=(
-            FailedStep(number=1, name="pytest", conclusion="failure"),
-        ),
+        failed_steps=(FailedStep(number=1, name="pytest", conclusion="failure"),),
     )
 
 
