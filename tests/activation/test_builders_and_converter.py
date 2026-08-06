@@ -312,10 +312,7 @@ def _proposal_operation(
     text_hash = hashlib.sha256(UNIQUE_FRAGMENT.encode("utf-8")).hexdigest()
     replacement_hash = hashlib.sha256(REPLACEMENT.encode("utf-8")).hexdigest()
     evidence_hashes = tuple(
-        sorted(
-            stable_hash(evidence_id)
-            for evidence_id in classification.evidence_ids
-        )
+        sorted(stable_hash(evidence_id) for evidence_id in classification.evidence_ids)
     )
     return PRRepairOperation(
         operation_id="pr_repair_operation_" + "9" * 44,

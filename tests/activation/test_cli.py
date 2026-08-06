@@ -211,9 +211,7 @@ def test_correlate_classify(
         ],
     )
     payload = _stdout_json(capsys)
-    assert payload["schema_version"] == (
-        "l9.correlation-classification-result/v1"
-    )
+    assert payload["schema_version"] == ("l9.correlation-classification-result/v1")
     category = payload["classification"]["category"]
     assert code == (0 if category != "unsupported" else 2)
 
@@ -401,9 +399,7 @@ def _remediation_plan_document(before: str) -> dict[str, Any]:
             }
         ],
         "expected_changed_paths": list(source.expected_changed_paths),
-        "expected_package_boundaries": list(
-            source.expected_package_boundaries
-        ),
+        "expected_package_boundaries": list(source.expected_package_boundaries),
         "expected_contract_ids": list(source.expected_contract_ids),
         "expected_dependency_edges": list(source.expected_dependency_edges),
         "validation_plan_id": source.validation_plan_id,
