@@ -6,5 +6,5 @@
 # declared third-party dependencies, so strict type-checking has stubs for
 # every import it may reach.
 mypy>=1.11,<2
-types-PyYAML>=6.0,<7
+types-PyYAML>=6.0.12.20260724,<7
 types-jsonschema>=4.23,<5
