@@ -69,10 +69,14 @@ def resolver_capabilities() -> dict[str, Any]:
             ],
         },
         "limitations": [
-            "PR_Repair delegation is unsupported in v0.1: no delegate "
-            "implements the request or proposal contract.",
-            "The resolver is the only debt-pipeline repair planner and "
-            "applier in v0.1.",
+            (
+                "PR_Repair delegation is unsupported in v0.1: no delegate "
+                "implements the request or proposal contract."
+            ),
+            (
+                "The resolver is the only debt-pipeline repair planner and "
+                "applier in v0.1."
+            ),
             "PR_Repair may generate proposals only.",
             "Resolver retains all mutation and validation authority.",
             "Resolver retains branch, push, rerun, attempt, and "
