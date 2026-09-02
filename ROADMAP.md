@@ -88,7 +88,9 @@ Status: Implemented
 
 RESOLVER-P6 - PR_Repair delegation
 
-Status: Implemented
+Status: Implemented here, unsupported in v0.1 - no delegate implements
+l9.pr-repair-request/v1 or l9.pr-repair-proposal/v1. See
+docs/repair-authority-v0.1.md.
 
 * proposal-only delegation
 * bounded privacy-safe context
