@@ -4,9 +4,15 @@
 recovery component of the Quantum-L9 CI constellation. It retrieves the actual
 failed CI logs, correlates them with SDK-owned repository knowledge, applies
 bounded and validated local remediation, drives an authorized remote repair
-loop, emits privacy-safe Intelligence feedback, and — when direct remediation
-is not eligible — delegates proposal generation to PR_Repair while retaining
-all mutation authority.
+loop, and emits privacy-safe Intelligence feedback. It is the debt pipeline's
+only repair planner and applier.
+
+> **v0.1 status:** PR_Repair delegation (RESOLVER-P6) is **built here and
+> unsupported in practice**: no delegate implements
+> `l9.pr-repair-request/v1` or `l9.pr-repair-proposal/v1`, and PR_Repair is a
+> standalone pull-request assistant outside the debt pipeline. The delegation
+> sections below describe a protocol with no counterparty. See
+> [`docs/repair-authority-v0.1.md`](docs/repair-authority-v0.1.md).
 
 ## Authority model
 
@@ -76,7 +82,8 @@ P0 establishes:
 * the package, CLI, tests, and CI foundations.
 
 P0 does not acquire logs, inspect repositories, remediate code, mutate Git,
-observe reruns, deliver Intelligence feedback, or delegate to PR_Repair.
+observe reruns, deliver Intelligence feedback, or delegate to PR_Repair
+(delegation being unsupported in v0.1, as noted above).
 
 ### Contract validation
 
@@ -340,6 +347,13 @@ l9-debt-resolver drain-feedback \
 ```
 
 ## RESOLVER-P6: constrained PR_Repair delegation
+
+> **Unsupported in v0.1.** The protocol below is implemented and tested on this
+> side. No delegate implements it: neither `l9.pr-repair-request/v1` nor
+> `l9.pr-repair-proposal/v1` appears in PR_Repair or any other repository in the
+> constellation. `resolver_capabilities()` reports
+> `PR_Repair_delegation: false`. Read this section as the shape delegation would
+> take, not as a live integration.
 
 P6 delegates proposal generation only.
 
