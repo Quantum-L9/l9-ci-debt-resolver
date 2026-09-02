@@ -76,11 +76,67 @@ def test_resolver_capabilities_shape() -> None:
     assert capabilities["schema_version"] == "l9.resolver-capabilities/v1"
     assert capabilities["phase"] == "RESOLVER-P6"
     grants = capabilities["capabilities"]
-    assert grants["PR_Repair_delegation"] is True
+    # Unsupported, not merely restricted: no delegate implements the request or
+    # proposal contract, so advertising the capability would name a channel with
+    # nothing on the far end.
+    assert grants["PR_Repair_delegation"] is False
     assert grants["automatic_merge"] is False
     assert grants["PR_Repair_push_authority"] is False
     assert isinstance(capabilities["limitations"], list)
     assert capabilities["limitations"]
+
+
+def test_pr_repair_delegation_is_reported_unsupported() -> None:
+    """The resolver must not advertise a delegate that does not exist.
+
+    The delegation protocol is fully built on this side. What is missing is the
+    other side: `l9.pr-repair-request/v1` and `l9.pr-repair-proposal/v1` appear
+    in no other repository in the constellation. In v0.1 the resolver is the
+    only debt-pipeline repair planner, and PR_Repair is a standalone
+    pull-request assistant outside the pipeline.
+    """
+    status = resolver_capabilities()["delegation_status"]
+    assert status["status"] == "unsupported"
+    assert status["request_contract"] == "l9.pr-repair-request/v1"
+    assert status["proposal_contract"] == "l9.pr-repair-proposal/v1"
+    assert status["repair_authority"] == "l9-ci-debt-resolver"
+    assert status["reason"]
+
+
+def test_pr_repair_holds_no_authority_grant() -> None:
+    """Guard the authority surface, not just the delegation flag.
+
+    A future edit must not re-enable one of these piecemeal and leave the
+    capability document claiming PR_Repair holds pipeline authority.
+    """
+    grants = resolver_capabilities()["capabilities"]
+    authority = {
+        name: value
+        for name, value in grants.items()
+        if "PR_Repair" in name and not name.endswith("_transport")
+    }
+    assert authority, "expected PR_Repair authority grants in the capability document"
+    assert not any(authority.values()), authority
+
+
+def test_delegation_transports_are_declared_inert() -> None:
+    """Implemented is not the same as reachable.
+
+    The file and HTTPS transports are real, tested code, so reporting them as
+    absent would be its own inaccuracy. They carry nothing while no delegate
+    implements the protocol, and the capability document has to say so rather
+    than leaving a reader to infer a live channel from a `True`.
+    """
+    capabilities = resolver_capabilities()
+    grants = capabilities["capabilities"]
+    inert = capabilities["delegation_status"]["inert_transports"]
+    assert inert
+    for name in inert:
+        assert name in grants, name
+        # Implemented, hence True -- and named as inert, hence not a claim.
+        assert grants[name] is True, name
+    transports = {name for name in grants if name.endswith("_PR_Repair_transport")}
+    assert transports == set(inert), "every PR_Repair transport must be declared inert"
 
 
 async def _real_event() -> tuple[
