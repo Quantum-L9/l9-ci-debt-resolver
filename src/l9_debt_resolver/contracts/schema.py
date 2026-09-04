@@ -14,6 +14,19 @@ from referencing import Registry, Resource
 from .errors import SchemaValidationError
 
 
+def schema_root() -> Path:
+    """Repository-root ``schemas/resolver``.
+
+    One definition, because two callers need it: the ``validate`` CLI command
+    and the publish ingress in ``feedback.loader``. Computing the path
+    separately in each place is how the two feedback paths drifted apart in the
+    first place.
+
+    (src/l9_debt_resolver/contracts/schema.py -> parents[3] == repository root.)
+    """
+    return Path(__file__).resolve().parents[3] / "schemas" / "resolver"
+
+
 class SchemaRegistry:
     def __init__(
         self,
