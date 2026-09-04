@@ -20,6 +20,7 @@ from .feedback.file_transport import JSONFileFeedbackTransport
 from .feedback.http_transport import HTTPSFeedbackTransport
 from .feedback.loader import load_feedback_event
 from .feedback.outbox import FeedbackOutbox
+from .feedback.privacy import validate_feedback_event
 from .feedback.protocol import FeedbackTransport
 from .providers.github.provider import (
     GitHubActionsProvider,
@@ -381,6 +382,14 @@ def main() -> int:
     schema_path = schema_root() / f"{arguments.schema}.schema.json"
     document = json.loads(arguments.document.read_text(encoding="utf-8"))
     SchemaValidator(schema_path).validate(document)
+    # Schema conformance is not privacy conformance. `validate` used to run the
+    # schema alone, so an operator pre-flighting a feedback event that carried a
+    # raw CI log in a free-text field was told "status: valid" -- while the
+    # publish path, which does run the privacy validator, would refuse the very
+    # same document. Run both here so the check answers the question an operator
+    # is actually asking before publishing.
+    if arguments.schema == "intelligence-feedback-event":
+        validate_feedback_event(document)
     emit(
         {
             "schema_version": ("l9.resolver-contract-validation/v1"),
