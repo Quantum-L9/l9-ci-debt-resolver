@@ -3,18 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..contracts.schema import SchemaValidator
+from ..contracts.schema import SchemaValidator, schema_root
 from .models import FeedbackEvent
 from .privacy import validate_feedback_event
 
-# Repository-root `schemas/resolver`, relative to this module
-# (src/l9_debt_resolver/feedback/loader.py -> parents[3] == repository root).
-_SCHEMA_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "schemas"
-    / "resolver"
-    / "intelligence-feedback-event.schema.json"
-)
+_SCHEMA_NAME = "intelligence-feedback-event.schema.json"
 
 
 def load_feedback_event(
@@ -31,7 +24,7 @@ def load_feedback_event(
     # while `l9-debt-resolver validate intelligence-feedback-event` refused the
     # same document. Enforce the contract schema at the publish ingress too, so
     # the resolver cannot ship what its own validator rejects.
-    SchemaValidator(_SCHEMA_PATH).validate(value)
+    SchemaValidator(schema_root() / _SCHEMA_NAME).validate(value)
     validate_feedback_event(value)
     return FeedbackEvent(
         event_id=value["event_id"],

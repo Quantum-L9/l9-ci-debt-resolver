@@ -13,7 +13,7 @@ from .classification.models import (
     ClassificationSignal,
     ClassificationTrace,
 )
-from .contracts.schema import SchemaValidator
+from .contracts.schema import SchemaValidator, schema_root
 from .correlation.loader import load_evidence_bundle
 from .feedback.delivery import FeedbackDeliveryService
 from .feedback.file_transport import JSONFileFeedbackTransport
@@ -43,10 +43,6 @@ def emit(value: Any) -> None:
             separators=(",", ":"),
         )
     )
-
-
-def schema_root() -> Path:
-    return Path(__file__).resolve().parents[2] / "schemas" / "resolver"
 
 
 def build_parser() -> argparse.ArgumentParser:
