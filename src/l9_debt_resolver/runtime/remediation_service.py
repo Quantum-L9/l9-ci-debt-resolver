@@ -89,6 +89,10 @@ class RemediationService:
                 rolled_back=False,
                 limitations=transcript.limitations,
             )
-        except Exception:
+        except BaseException:
+            # BaseException, not Exception: this is an async path, and
+            # asyncio.CancelledError derives from BaseException. Under
+            # `except Exception` a cancelled remediation skipped the rollback
+            # and left the workspace transaction applied but never committed.
             transaction.rollback()
             raise
