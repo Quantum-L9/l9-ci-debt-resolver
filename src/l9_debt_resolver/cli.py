@@ -3,9 +3,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+from .acquisition.evidence_bundle import BundleProjection
 from .acquisition.service import (
     FailedLogAcquisitionService,
 )
@@ -15,10 +18,12 @@ from .classification.models import (
 )
 from .contracts.schema import SchemaValidator, schema_root
 from .correlation.loader import load_evidence_bundle
+from .feedback.builder import build_feedback_event
 from .feedback.delivery import FeedbackDeliveryService
 from .feedback.file_transport import JSONFileFeedbackTransport
 from .feedback.http_transport import HTTPSFeedbackTransport
 from .feedback.loader import load_feedback_event
+from .feedback.observation import observed_failure_outcome
 from .feedback.outbox import FeedbackOutbox
 from .feedback.privacy import validate_feedback_event
 from .feedback.protocol import FeedbackTransport
@@ -31,6 +36,7 @@ from .runtime.correlation_service import ResolverCorrelationRuntime
 from .runtime.feedback_service import ResolverFeedbackService
 from .runtime.remediation_service import RemediationService
 from .sdk.document_adapter import DocumentSDKKnowledgeProvider
+from .sdk.finding_bundle_adapter import FindingBundleKnowledgeAdapter
 from .validation.json_gateway import JSONSDKValidationGateway
 
 
@@ -76,19 +82,33 @@ def build_parser() -> argparse.ArgumentParser:
             "feedback-delivery-receipt",
             "feedback-outbox-record",
             "sdk-knowledge-document",
-            "evidence-bundle",
-            "stack-frame",
-            "repository-correlation",
-            "classification-trace",
-            "remediation-plan",
-            "validation-transcript",
-            "intelligence-feedback-event",
-            "feedback-delivery-receipt",
-            "feedback-outbox-record",
-            "sdk-knowledge-document",
         ],
     )
     validate.add_argument("document", type=Path)
+
+    knowledge = commands.add_parser(
+        "build-sdk-knowledge",
+        help=(
+            "Project a public l9.finding-bundle/v1 onto the resolver-owned "
+            "l9.sdk-knowledge-document/v1 that correlate-classify consumes."
+        ),
+    )
+    knowledge.add_argument("bundle", type=Path)
+    knowledge.add_argument(
+        "--repository",
+        required=True,
+        help=(
+            "GitHub owner/name. Required because a finding bundle does not name "
+            "the repository it scanned -- snapshot.repository_root is a local "
+            "path, not an identity."
+        ),
+    )
+    knowledge.add_argument(
+        "--repository-root",
+        type=Path,
+        help="Optional checkout root for resolver-side entity and test context.",
+    )
+    knowledge.add_argument("--output", type=Path)
 
     correlate = commands.add_parser("correlate-classify")
     correlate.add_argument(
@@ -121,6 +141,69 @@ def build_parser() -> argparse.ArgumentParser:
         "--api-url",
         default="https://api.github.com",
     )
+    # Without this the resolver could not feed its own classifier: acquisition
+    # emitted l9.acquisition-report/v1 and correlate-classify consumed
+    # l9.evidence-bundle/v1, and nothing converted one to the other. The log
+    # body the bundle requires exists only during acquisition, so it is written
+    # here or not at all.
+    acquire.add_argument(
+        "--emit-bundles",
+        default=None,
+        type=Path,
+        help=(
+            "Directory to write one l9.evidence-bundle/v1 per complete failed "
+            "job, for correlate-classify --evidence-bundle."
+        ),
+    )
+
+    # `build_feedback_event` already existed and nothing called it. The only
+    # producer of the `ResolutionOutcome` it needs was the remote-rerun path, so
+    # a failure the resolver acquired and classified but did not repair -- its
+    # most common state -- had no route to an intelligence feedback event.
+    feedback_build = commands.add_parser(
+        "build-feedback-event",
+        help=(
+            "Correlate and classify an evidence bundle, then project the result "
+            "onto l9.intelligence-feedback-event/v1 for publish-feedback."
+        ),
+    )
+    feedback_build.add_argument(
+        "--evidence-bundle",
+        required=True,
+        type=Path,
+    )
+    feedback_build.add_argument(
+        "--SDK-knowledge",
+        required=True,
+        type=Path,
+    )
+    feedback_build.add_argument(
+        "--repository",
+        required=True,
+        help="GitHub owner/name. Pseudonymised in the event; never emitted raw.",
+    )
+    feedback_build.add_argument("--run-id", required=True)
+    feedback_build.add_argument(
+        "--branch",
+        default="unknown",
+        help="Branch the failure was observed on. Not emitted -- the event "
+        "contract forbids a branch field -- but part of the outcome record.",
+    )
+    feedback_build.add_argument("--provider", default="github_actions")
+    feedback_build.add_argument(
+        "--attempt-number",
+        type=int,
+        default=1,
+    )
+    feedback_build.add_argument(
+        "--pseudonym-key-environment",
+        default="L9_FEEDBACK_PSEUDONYM_KEY",
+        help=(
+            "Environment variable holding the repository-pseudonym key "
+            "(>= 32 bytes). The key never appears in the event or in argv."
+        ),
+    )
+    feedback_build.add_argument("--output", type=Path)
 
     remediate = commands.add_parser("remediate-offline")
     remediate.add_argument(
@@ -181,17 +264,46 @@ async def acquire_github_run(
     run_id: str,
     repository_root: str | None,
     api_url: str,
+    emit_bundles: Path | None = None,
 ) -> dict[str, Any]:
     provider = GitHubActionsProvider.from_environment(
         repository_root=repository_root,
         base_url=api_url,
     )
     service = FailedLogAcquisitionService(provider)
-    report = await service.acquire(
+    outcome = await service.acquire_with_bundles(
         repository=repository,
         run_id=run_id,
     )
-    return report.as_dict()
+    if emit_bundles is not None:
+        _write_evidence_bundles(outcome.projection, emit_bundles)
+    return outcome.report.as_dict()
+
+
+def _write_evidence_bundles(
+    projection: BundleProjection,
+    directory: Path,
+) -> None:
+    """Write each projected bundle, validated before it reaches disk.
+
+    Same posture as `build-sdk-knowledge`: a document `correlate-classify`
+    would refuse must never be written, because a file on disk that looks like
+    classification input and is not is worse than no file.
+    """
+    validator = SchemaValidator(schema_root() / "evidence-bundle.schema.json")
+    directory.mkdir(parents=True, exist_ok=True)
+    for bundle in projection.bundles:
+        validator.validate(bundle)
+        evidence_id = str(bundle["evidence"]["evidence_id"])
+        (directory / f"{evidence_id}.json").write_text(
+            json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    (directory / "index.json").write_text(
+        json.dumps(projection.as_index(), ensure_ascii=False, sort_keys=True, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _load_classification_trace(
@@ -314,6 +426,89 @@ def main() -> int:
         emit(resolver_capabilities())
         return 0
 
+    if arguments.command == "build-sdk-knowledge":
+        document = FindingBundleKnowledgeAdapter().build_from_path(
+            arguments.bundle,
+            repository=arguments.repository,
+            repository_root=arguments.repository_root,
+        )
+        # Validated against the resolver's own schema before it is written, so a
+        # document that correlate-classify would refuse never reaches disk.
+        SchemaValidator(schema_root() / "sdk-knowledge-document.schema.json").validate(
+            document
+        )
+        if arguments.output:
+            arguments.output.parent.mkdir(parents=True, exist_ok=True)
+            arguments.output.write_text(
+                json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
+        else:
+            emit(document)
+        return 0
+    if arguments.command == "build-feedback-event":
+        key = os.environ.get(arguments.pseudonym_key_environment, "")
+        if len(key.encode("utf-8")) < 32:
+            raise SystemExit(
+                f"{arguments.pseudonym_key_environment} must hold at least 32 "
+                "bytes; the repository pseudonym is an HMAC and a short key "
+                "makes it reversible by hashing a candidate list"
+            )
+        bundle = load_evidence_bundle(arguments.evidence_bundle)
+        SDK = DocumentSDKKnowledgeProvider.from_path(arguments.SDK_knowledge)
+        # Correlation runs in-process rather than reading a previously written
+        # correlate-classify document: there is no loader for
+        # `RepositoryCorrelation`, and re-parsing our own output would risk the
+        # event describing something subtly different from what the classifier
+        # produced.
+        result = asyncio.run(ResolverCorrelationRuntime(SDK=SDK).execute(bundle))
+        outcome = observed_failure_outcome(
+            classification=result.classification,
+            repository=arguments.repository,
+            run_id=arguments.run_id,
+            branch=arguments.branch,
+        )
+        event = build_feedback_event(
+            repository=arguments.repository,
+            pseudonym_key=key.encode("utf-8"),
+            provider=arguments.provider,
+            resolver_version=version("l9-ci-debt-resolver"),
+            attempt_number=arguments.attempt_number,
+            classification_trace=result.classification,
+            correlation=result.correlation,
+            resolution_outcome=outcome,
+            # Nothing was repaired, rerun or validated. Each of these is the
+            # contract's own value for "did not happen" rather than a zero that
+            # would read as a clean no-op repair.
+            remediation_class=None,
+            changed_file_count=0,
+            changed_line_count=0,
+            validation_result="not_run",
+            validation_result_id=None,
+            validation_step_count=0,
+            validation_duration_bucket="unknown",
+            graph_delta_accepted=None,
+            remediation_plan_id=None,
+        )
+        document = event.as_dict()
+        # Validated twice on purpose: the privacy validator (already run inside
+        # build_feedback_event) enforces the redaction posture, and the schema
+        # enforces the shape Intelligence's consumer requires. Passing one does
+        # not imply the other.
+        SchemaValidator(
+            schema_root() / "intelligence-feedback-event.schema.json"
+        ).validate(document)
+        if arguments.output:
+            arguments.output.parent.mkdir(parents=True, exist_ok=True)
+            arguments.output.write_text(
+                json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
+        else:
+            emit(document)
+        return 0
     if arguments.command == "correlate-classify":
         bundle = load_evidence_bundle(arguments.evidence_bundle)
         SDK = DocumentSDKKnowledgeProvider.from_path(arguments.SDK_knowledge)
@@ -328,6 +523,7 @@ def main() -> int:
                 run_id=arguments.run_id,
                 repository_root=(arguments.repository_root),
                 api_url=arguments.api_url,
+                emit_bundles=arguments.emit_bundles,
             )
         )
         emit(report)

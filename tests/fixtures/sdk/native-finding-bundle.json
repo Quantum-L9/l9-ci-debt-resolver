@@ -1,0 +1,183 @@
+{
+  "SDK_version": "2.0.0",
+  "classifications": [
+    {
+      "finding_id": "fn_semgrep_15a086814d8d1c30d53b632f610f6bbcedc947f8673c76f81f9d3f880b17f6b3",
+      "mode": "advisory",
+      "policy_version": "1",
+      "resolution_status": "defaulted",
+      "used_default": true
+    },
+    {
+      "finding_id": "fn_semgrep_273fc5ddff842c71b4476b2092515cf1aec000bf4ede5e929ec970a217c72c7a",
+      "mode": "advisory",
+      "policy_version": "1",
+      "resolution_status": "defaulted",
+      "used_default": true
+    }
+  ],
+  "coverage": [
+    {
+      "files_analyzed": 93,
+      "files_considered": 93,
+      "limitations": [],
+      "provider_id": "semgrep",
+      "status": "complete"
+    }
+  ],
+  "evidence": [
+    {
+      "attributes": {
+        "identity_mapping_version": null,
+        "identity_resolution_status": "trusted_metadata",
+        "metadata": {
+          "category": "correctness"
+        },
+        "provider_severity": "INFO"
+      },
+      "canonical_rule_id": "L9-PYTHON-BROAD-EXCEPT",
+      "confidence": "unknown",
+      "evidence_id": "ev_semgrep_4193950ba541eaae589ae9db487a10944ebb69cbb609836431d88aef3ba6ca45",
+      "evidence_type": "static-analysis-match",
+      "identifiers": {
+        "semgrep_check_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.baseline.python.broad-except"
+      },
+      "limitations": [],
+      "locations": [
+        {
+          "end_column": 14,
+          "end_line": 130,
+          "normalized_path": "src/pr_repair/repair/repair_executor.py",
+          "start_column": 5,
+          "start_line": 52
+        }
+      ],
+      "message": "Bare or overly broad except clause swallows unrelated errors. Catch a specific exception type.",
+      "provider_fingerprint": "requires login",
+      "provider_id": "semgrep",
+      "provider_rule_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.baseline.python.broad-except",
+      "provider_version": "1.176.1",
+      "severity": "informational",
+      "snapshot_id": "edeef6dcc316ec79b2f672ec2c827083f4035656"
+    },
+    {
+      "attributes": {
+        "identity_mapping_version": null,
+        "identity_resolution_status": "trusted_metadata",
+        "metadata": {},
+        "provider_severity": "WARNING"
+      },
+      "canonical_rule_id": "AST-LOGGING-001",
+      "confidence": "unknown",
+      "evidence_id": "ev_semgrep_44d898ac8926d201a62f8560d33596397458cd1007b51ee1c47f1a82ce00df3b",
+      "evidence_type": "static-analysis-match",
+      "identifiers": {
+        "semgrep_check_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.logging.forbidden-secret-field"
+      },
+      "limitations": [],
+      "locations": [
+        {
+          "end_column": 39,
+          "end_line": 38,
+          "normalized_path": "src/pr_repair/logging.py",
+          "start_column": 9,
+          "start_line": 38
+        }
+      ],
+      "message": "Forbidden secret-like value passed to logger. Do not log api_key, token, password, secret, raw_response, or llm_response.",
+      "provider_fingerprint": "requires login",
+      "provider_id": "semgrep",
+      "provider_rule_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.logging.forbidden-secret-field",
+      "provider_version": "1.176.1",
+      "severity": "medium",
+      "snapshot_id": "edeef6dcc316ec79b2f672ec2c827083f4035656"
+    }
+  ],
+  "findings": [
+    {
+      "attributes": {
+        "identity_resolution_status": "trusted_metadata",
+        "semgrep_check_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.logging.forbidden-secret-field"
+      },
+      "canonical_rule_id": "AST-LOGGING-001",
+      "category": "static-analysis",
+      "confidence": "unknown",
+      "evidence_ids": [
+        "ev_semgrep_44d898ac8926d201a62f8560d33596397458cd1007b51ee1c47f1a82ce00df3b"
+      ],
+      "finding_id": "fn_semgrep_15a086814d8d1c30d53b632f610f6bbcedc947f8673c76f81f9d3f880b17f6b3",
+      "fingerprint": "4365ebc0f15c580659e375612b61507431354ed0c187d02b236cf613281f7bb5",
+      "limitations": [],
+      "locations": [
+        {
+          "end_column": 39,
+          "end_line": 38,
+          "normalized_path": "src/pr_repair/logging.py",
+          "start_column": 9,
+          "start_line": 38
+        }
+      ],
+      "message": "Forbidden secret-like value passed to logger. Do not log api_key, token, password, secret, raw_response, or llm_response.",
+      "provider_id": "semgrep",
+      "provider_rule_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.logging.forbidden-secret-field",
+      "severity": "medium",
+      "snapshot_id": "edeef6dcc316ec79b2f672ec2c827083f4035656"
+    },
+    {
+      "attributes": {
+        "identity_resolution_status": "trusted_metadata",
+        "semgrep_check_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.baseline.python.broad-except"
+      },
+      "canonical_rule_id": "L9-PYTHON-BROAD-EXCEPT",
+      "category": "correctness",
+      "confidence": "unknown",
+      "evidence_ids": [
+        "ev_semgrep_4193950ba541eaae589ae9db487a10944ebb69cbb609836431d88aef3ba6ca45"
+      ],
+      "finding_id": "fn_semgrep_273fc5ddff842c71b4476b2092515cf1aec000bf4ede5e929ec970a217c72c7a",
+      "fingerprint": "cc5eda6c9e0f2463d8ad0d128904137996dd32df23d4e6e80a426296bc143d92",
+      "limitations": [],
+      "locations": [
+        {
+          "end_column": 14,
+          "end_line": 130,
+          "normalized_path": "src/pr_repair/repair/repair_executor.py",
+          "start_column": 5,
+          "start_line": 52
+        }
+      ],
+      "message": "Bare or overly broad except clause swallows unrelated errors. Catch a specific exception type.",
+      "provider_id": "semgrep",
+      "provider_rule_id": "l9.runtime.sdk.source.l9_ci.rulesets.semgrep.python.l9.baseline.python.broad-except",
+      "severity": "informational",
+      "snapshot_id": "edeef6dcc316ec79b2f672ec2c827083f4035656"
+    }
+  ],
+  "generated_at": "2026-09-05T12:25:42Z",
+  "limitations": [],
+  "provider_failures": [],
+  "providers": [
+    {
+      "adapter_version": "1.0.0",
+      "mode": "execute",
+      "provider_id": "semgrep",
+      "provider_version": "1.176.1",
+      "required": true
+    }
+  ],
+  "schema": "l9.finding-bundle/v1",
+  "schema_version": "1.0.0",
+  "snapshot": {
+    "repository_root": ".",
+    "revision": "edeef6dcc316ec79b2f672ec2c827083f4035656",
+    "snapshot_id": "edeef6dcc316ec79b2f672ec2c827083f4035656"
+  },
+  "summary": {
+    "classification_count": 2,
+    "coverage_count": 1,
+    "evidence_count": 2,
+    "finding_count": 2,
+    "provider_count": 1,
+    "provider_failure_count": 0
+  }
+}
