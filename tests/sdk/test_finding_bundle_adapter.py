@@ -8,7 +8,7 @@ semantic index.
 
 `tests/fixtures/sdk/native-finding-bundle.json` is not hand-written. It is the
 bundle the Core-provisioned SDK produced from a real Semgrep 1.176.1 scan of
-Quantum-L9/PR_Repair@edeef6dc, trimmed to its first two findings and the
+Quantum-L9/l9-pr-repair@edeef6dc, trimmed to its first two findings and the
 evidence they reference and otherwise carried over unmodified.
 
 The load-bearing assertion is `test_the_document_is_accepted_by_the_consumer`:
@@ -35,7 +35,7 @@ from l9_debt_resolver.sdk.finding_bundle_adapter import (
 
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = ROOT / "tests/fixtures/sdk/native-finding-bundle.json"
-REPOSITORY = "Quantum-L9/PR_Repair"
+REPOSITORY = "Quantum-L9/l9-pr-repair"
 REVISION = "edeef6dcc316ec79b2f672ec2c827083f4035656"
 
 

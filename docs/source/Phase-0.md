@@ -131,7 +131,7 @@ dependency_contract:
   must_not_depend_on:
     - Quantum-L9/l9-ci-debt-intelligence runtime internals
     - Quantum-L9/l9-ci-debt-lsp
-    - Quantum-L9/PR_Repair internals
+    - Quantum-L9/l9-pr-repair internals
   PR_Repair_relationship:
     resolver_scope: specialized actual-CI-failure remediation
     PR_Repair_scope: broad multi-source governed proposal generation
