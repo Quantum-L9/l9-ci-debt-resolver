@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .acquisition.evidence_bundle import BundleProjection
 from .acquisition.service import (
     FailedLogAcquisitionService,
 )
@@ -77,16 +78,6 @@ def build_parser() -> argparse.ArgumentParser:
             "feedback-delivery-receipt",
             "feedback-outbox-record",
             "sdk-knowledge-document",
-            "evidence-bundle",
-            "stack-frame",
-            "repository-correlation",
-            "classification-trace",
-            "remediation-plan",
-            "validation-transcript",
-            "intelligence-feedback-event",
-            "feedback-delivery-receipt",
-            "feedback-outbox-record",
-            "sdk-knowledge-document",
         ],
     )
     validate.add_argument("document", type=Path)
@@ -145,6 +136,20 @@ def build_parser() -> argparse.ArgumentParser:
     acquire.add_argument(
         "--api-url",
         default="https://api.github.com",
+    )
+    # Without this the resolver could not feed its own classifier: acquisition
+    # emitted l9.acquisition-report/v1 and correlate-classify consumed
+    # l9.evidence-bundle/v1, and nothing converted one to the other. The log
+    # body the bundle requires exists only during acquisition, so it is written
+    # here or not at all.
+    acquire.add_argument(
+        "--emit-bundles",
+        default=None,
+        type=Path,
+        help=(
+            "Directory to write one l9.evidence-bundle/v1 per complete failed "
+            "job, for correlate-classify --evidence-bundle."
+        ),
     )
 
     remediate = commands.add_parser("remediate-offline")
@@ -206,17 +211,46 @@ async def acquire_github_run(
     run_id: str,
     repository_root: str | None,
     api_url: str,
+    emit_bundles: Path | None = None,
 ) -> dict[str, Any]:
     provider = GitHubActionsProvider.from_environment(
         repository_root=repository_root,
         base_url=api_url,
     )
     service = FailedLogAcquisitionService(provider)
-    report = await service.acquire(
+    outcome = await service.acquire_with_bundles(
         repository=repository,
         run_id=run_id,
     )
-    return report.as_dict()
+    if emit_bundles is not None:
+        _write_evidence_bundles(outcome.projection, emit_bundles)
+    return outcome.report.as_dict()
+
+
+def _write_evidence_bundles(
+    projection: BundleProjection,
+    directory: Path,
+) -> None:
+    """Write each projected bundle, validated before it reaches disk.
+
+    Same posture as `build-sdk-knowledge`: a document `correlate-classify`
+    would refuse must never be written, because a file on disk that looks like
+    classification input and is not is worse than no file.
+    """
+    validator = SchemaValidator(schema_root() / "evidence-bundle.schema.json")
+    directory.mkdir(parents=True, exist_ok=True)
+    for bundle in projection.bundles:
+        validator.validate(bundle)
+        evidence_id = str(bundle["evidence"]["evidence_id"])
+        (directory / f"{evidence_id}.json").write_text(
+            json.dumps(bundle, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    (directory / "index.json").write_text(
+        json.dumps(projection.as_index(), ensure_ascii=False, sort_keys=True, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def _load_classification_trace(
@@ -374,6 +408,7 @@ def main() -> int:
                 run_id=arguments.run_id,
                 repository_root=(arguments.repository_root),
                 api_url=arguments.api_url,
+                emit_bundles=arguments.emit_bundles,
             )
         )
         emit(report)
