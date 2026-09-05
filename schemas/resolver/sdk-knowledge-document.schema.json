@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "l9://resolver/sdk-knowledge-document/v1",
   "title": "L9 Resolver SDK Knowledge Exchange Document",
+  "description": "Resolver-owned exchange document (DECISION-005). l9-ci-sdk does not emit this token and is not asked to: the document is resolver-shaped and resolver-consumed, projecting public SDK artifacts onto the resolver's own concepts -- snapshots, repository entities, related tests, contract references and finding correlations. Asking the SDK to emit it would widen the SDK from fact producer to resolver-specific semantic index producer.\n\nThe sub-shapes are defined here rather than referenced. They previously pointed at l9://sdk/repository-snapshot/v1, l9://sdk/repository-entity/v1, l9://sdk/contract-reference/v1 and l9://sdk/finding/v1 -- URIs no schema anywhere declares, so this document could never be validated at all and `l9-debt-resolver validate sdk-knowledge-document` raised Unresolvable. They are not vendored SDK copies: there is no SDK schema of any of those names, the SDK publishes under https://schemas.quantum-l9.dev/, and the shapes below are the resolver's projection, not the SDK's records. `finding.rule_id` is the clearest case -- the SDK's own finding carries canonical_rule_id and provider_rule_id and no rule_id at all.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -28,30 +29,194 @@
       "maxLength": 128
     },
     "snapshot": {
-      "$ref": "l9://sdk/repository-snapshot/v1"
+      "$ref": "#/$defs/snapshot"
     },
     "entities": {
       "type": "array",
       "items": {
-        "$ref": "l9://sdk/repository-entity/v1"
+        "$ref": "#/$defs/entity"
       }
     },
     "tests": {
       "type": "array",
       "items": {
-        "$ref": "l9://sdk/repository-entity/v1"
+        "$ref": "#/$defs/entity"
       }
     },
     "contracts": {
       "type": "array",
       "items": {
-        "$ref": "l9://sdk/contract-reference/v1"
+        "$ref": "#/$defs/contract"
       }
     },
     "findings": {
       "type": "array",
       "items": {
-        "$ref": "l9://sdk/finding/v1"
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "repository",
+        "revision"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "repository": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 128
+        },
+        "capability_profile": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "entity": {
+      "description": "A region of the repository the resolver can attribute a stack frame to. Line bounds are optional: absent bounds mean the entity covers the whole file, which is the honest granularity when the source projected from carries no symbol structure.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id",
+        "kind"
+      ],
+      "properties": {
+        "entity_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "start_line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "end_line": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "symbol": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract_id",
+        "kind"
+      ],
+      "properties": {
+        "contract_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "metadata": {
+          "type": "object"
+        }
+      }
+    },
+    "finding": {
+      "description": "A finding correlated to resolver entities. `rule_id` is the resolver's single rule identity, projected from the producer's canonical rule id where it has one and from its provider rule id otherwise; the projection records which was used.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "rule_id",
+        "severity"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rule_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "entity_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "metadata": {
+          "type": "object"
+        }
       }
     }
   }

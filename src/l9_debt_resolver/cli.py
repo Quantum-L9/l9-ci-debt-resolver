@@ -31,6 +31,7 @@ from .runtime.correlation_service import ResolverCorrelationRuntime
 from .runtime.feedback_service import ResolverFeedbackService
 from .runtime.remediation_service import RemediationService
 from .sdk.document_adapter import DocumentSDKKnowledgeProvider
+from .sdk.finding_bundle_adapter import FindingBundleKnowledgeAdapter
 from .validation.json_gateway import JSONSDKValidationGateway
 
 
@@ -89,6 +90,30 @@ def build_parser() -> argparse.ArgumentParser:
         ],
     )
     validate.add_argument("document", type=Path)
+
+    knowledge = commands.add_parser(
+        "build-sdk-knowledge",
+        help=(
+            "Project a public l9.finding-bundle/v1 onto the resolver-owned "
+            "l9.sdk-knowledge-document/v1 that correlate-classify consumes."
+        ),
+    )
+    knowledge.add_argument("bundle", type=Path)
+    knowledge.add_argument(
+        "--repository",
+        required=True,
+        help=(
+            "GitHub owner/name. Required because a finding bundle does not name "
+            "the repository it scanned -- snapshot.repository_root is a local "
+            "path, not an identity."
+        ),
+    )
+    knowledge.add_argument(
+        "--repository-root",
+        type=Path,
+        help="Optional checkout root for resolver-side entity and test context.",
+    )
+    knowledge.add_argument("--output", type=Path)
 
     correlate = commands.add_parser("correlate-classify")
     correlate.add_argument(
@@ -314,6 +339,27 @@ def main() -> int:
         emit(resolver_capabilities())
         return 0
 
+    if arguments.command == "build-sdk-knowledge":
+        document = FindingBundleKnowledgeAdapter().build_from_path(
+            arguments.bundle,
+            repository=arguments.repository,
+            repository_root=arguments.repository_root,
+        )
+        # Validated against the resolver's own schema before it is written, so a
+        # document that correlate-classify would refuse never reaches disk.
+        SchemaValidator(schema_root() / "sdk-knowledge-document.schema.json").validate(
+            document
+        )
+        if arguments.output:
+            arguments.output.parent.mkdir(parents=True, exist_ok=True)
+            arguments.output.write_text(
+                json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
+        else:
+            emit(document)
+        return 0
     if arguments.command == "correlate-classify":
         bundle = load_evidence_bundle(arguments.evidence_bundle)
         SDK = DocumentSDKKnowledgeProvider.from_path(arguments.SDK_knowledge)
