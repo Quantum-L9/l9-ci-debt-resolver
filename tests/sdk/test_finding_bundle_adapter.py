@@ -164,6 +164,32 @@ class TestHonestyAboutWhatIsMissing:
             "file-level" in item for item in _document()["snapshot"]["limitations"]
         )
 
+    def test_a_supplied_repository_root_is_checked_not_ignored(
+        self, tmp_path: Path
+    ) -> None:
+        """An accepted-then-ignored argument is worse than an absent one.
+
+        A caller who mistypes the path would otherwise get a document that
+        looks enriched and is not.
+        """
+        with pytest.raises(SDKContractError, match="repository root does not exist"):
+            FindingBundleKnowledgeAdapter().build(
+                _bundle(),
+                repository=REPOSITORY,
+                repository_root=tmp_path / "definitely-absent",
+            )
+
+    def test_a_real_repository_root_still_yields_no_tests(self, tmp_path: Path) -> None:
+        document = FindingBundleKnowledgeAdapter().build(
+            _bundle(),
+            repository=REPOSITORY,
+            repository_root=tmp_path,
+        )
+        assert document["tests"] == []
+        assert any(
+            "not implemented" in item for item in document["snapshot"]["limitations"]
+        ), document["snapshot"]["limitations"]
+
     def test_only_the_contract_the_bundle_evidences_is_claimed(self) -> None:
         """No repository contract inventory: a bundle contains none."""
         contracts = _document()["contracts"]

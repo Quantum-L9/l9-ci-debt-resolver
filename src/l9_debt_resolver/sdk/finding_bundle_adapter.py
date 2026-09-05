@@ -23,6 +23,16 @@ way any other consumer would; it imports nothing from `l9_ci`, vendors no SDK
 schema, and rejects a document whose contract token it does not recognise rather
 than guessing at the shape.
 
+Locality
+--------
+The document it produces stays inside the resolver. It carries real
+repository-relative source paths on purpose -- correlation matches stack frames
+against them, and a pseudonym could not be matched -- so it is classification
+input, never delivery output. The artifact the resolver publishes is
+`l9.intelligence-feedback-event/v1`, which carries pseudonyms, fingerprints and
+bucketed magnitudes and is validated by `feedback.privacy` before it leaves.
+Nothing here may be routed to a consumer of that event.
+
 Honesty about what a finding bundle does not contain
 ----------------------------------------------------
 A finding bundle records where a scanner matched, not how the repository is
@@ -251,9 +261,15 @@ class FindingBundleKnowledgeAdapter:
                 "no repository context supplied; related tests are unknown and "
                 "the tests list is empty"
             ]
+        # Checked even though nothing reads it yet. An argument that is accepted
+        # and silently ignored is worse than one that is absent: a caller who
+        # mistypes the path gets a document that looks enriched and is not.
+        if not repository_root.is_dir():
+            raise SDKContractError(f"repository root does not exist: {repository_root}")
         return [], [
             "resolver-side test discovery is not implemented; related tests are "
-            "unknown and the tests list is empty"
+            "unknown and the tests list is empty despite a repository root "
+            f"being supplied ({repository_root.name})"
         ]
 
     def _contracts(
