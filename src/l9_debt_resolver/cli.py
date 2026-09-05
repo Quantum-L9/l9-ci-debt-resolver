@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -16,10 +18,12 @@ from .classification.models import (
 )
 from .contracts.schema import SchemaValidator, schema_root
 from .correlation.loader import load_evidence_bundle
+from .feedback.builder import build_feedback_event
 from .feedback.delivery import FeedbackDeliveryService
 from .feedback.file_transport import JSONFileFeedbackTransport
 from .feedback.http_transport import HTTPSFeedbackTransport
 from .feedback.loader import load_feedback_event
+from .feedback.observation import observed_failure_outcome
 from .feedback.outbox import FeedbackOutbox
 from .feedback.privacy import validate_feedback_event
 from .feedback.protocol import FeedbackTransport
@@ -151,6 +155,55 @@ def build_parser() -> argparse.ArgumentParser:
             "job, for correlate-classify --evidence-bundle."
         ),
     )
+
+    # `build_feedback_event` already existed and nothing called it. The only
+    # producer of the `ResolutionOutcome` it needs was the remote-rerun path, so
+    # a failure the resolver acquired and classified but did not repair -- its
+    # most common state -- had no route to an intelligence feedback event.
+    feedback_build = commands.add_parser(
+        "build-feedback-event",
+        help=(
+            "Correlate and classify an evidence bundle, then project the result "
+            "onto l9.intelligence-feedback-event/v1 for publish-feedback."
+        ),
+    )
+    feedback_build.add_argument(
+        "--evidence-bundle",
+        required=True,
+        type=Path,
+    )
+    feedback_build.add_argument(
+        "--SDK-knowledge",
+        required=True,
+        type=Path,
+    )
+    feedback_build.add_argument(
+        "--repository",
+        required=True,
+        help="GitHub owner/name. Pseudonymised in the event; never emitted raw.",
+    )
+    feedback_build.add_argument("--run-id", required=True)
+    feedback_build.add_argument(
+        "--branch",
+        default="unknown",
+        help="Branch the failure was observed on. Not emitted -- the event "
+        "contract forbids a branch field -- but part of the outcome record.",
+    )
+    feedback_build.add_argument("--provider", default="github_actions")
+    feedback_build.add_argument(
+        "--attempt-number",
+        type=int,
+        default=1,
+    )
+    feedback_build.add_argument(
+        "--pseudonym-key-environment",
+        default="L9_FEEDBACK_PSEUDONYM_KEY",
+        help=(
+            "Environment variable holding the repository-pseudonym key "
+            "(>= 32 bytes). The key never appears in the event or in argv."
+        ),
+    )
+    feedback_build.add_argument("--output", type=Path)
 
     remediate = commands.add_parser("remediate-offline")
     remediate.add_argument(
@@ -384,6 +437,68 @@ def main() -> int:
         SchemaValidator(schema_root() / "sdk-knowledge-document.schema.json").validate(
             document
         )
+        if arguments.output:
+            arguments.output.parent.mkdir(parents=True, exist_ok=True)
+            arguments.output.write_text(
+                json.dumps(document, ensure_ascii=False, sort_keys=True, indent=2)
+                + "\n",
+                encoding="utf-8",
+            )
+        else:
+            emit(document)
+        return 0
+    if arguments.command == "build-feedback-event":
+        key = os.environ.get(arguments.pseudonym_key_environment, "")
+        if len(key.encode("utf-8")) < 32:
+            raise SystemExit(
+                f"{arguments.pseudonym_key_environment} must hold at least 32 "
+                "bytes; the repository pseudonym is an HMAC and a short key "
+                "makes it reversible by hashing a candidate list"
+            )
+        bundle = load_evidence_bundle(arguments.evidence_bundle)
+        SDK = DocumentSDKKnowledgeProvider.from_path(arguments.SDK_knowledge)
+        # Correlation runs in-process rather than reading a previously written
+        # correlate-classify document: there is no loader for
+        # `RepositoryCorrelation`, and re-parsing our own output would risk the
+        # event describing something subtly different from what the classifier
+        # produced.
+        result = asyncio.run(ResolverCorrelationRuntime(SDK=SDK).execute(bundle))
+        outcome = observed_failure_outcome(
+            classification=result.classification,
+            repository=arguments.repository,
+            run_id=arguments.run_id,
+            branch=arguments.branch,
+        )
+        event = build_feedback_event(
+            repository=arguments.repository,
+            pseudonym_key=key.encode("utf-8"),
+            provider=arguments.provider,
+            resolver_version=version("l9-ci-debt-resolver"),
+            attempt_number=arguments.attempt_number,
+            classification_trace=result.classification,
+            correlation=result.correlation,
+            resolution_outcome=outcome,
+            # Nothing was repaired, rerun or validated. Each of these is the
+            # contract's own value for "did not happen" rather than a zero that
+            # would read as a clean no-op repair.
+            remediation_class=None,
+            changed_file_count=0,
+            changed_line_count=0,
+            validation_result="not_run",
+            validation_result_id=None,
+            validation_step_count=0,
+            validation_duration_bucket="unknown",
+            graph_delta_accepted=None,
+            remediation_plan_id=None,
+        )
+        document = event.as_dict()
+        # Validated twice on purpose: the privacy validator (already run inside
+        # build_feedback_event) enforces the redaction posture, and the schema
+        # enforces the shape Intelligence's consumer requires. Passing one does
+        # not imply the other.
+        SchemaValidator(
+            schema_root() / "intelligence-feedback-event.schema.json"
+        ).validate(document)
         if arguments.output:
             arguments.output.parent.mkdir(parents=True, exist_ok=True)
             arguments.output.write_text(
