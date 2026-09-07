@@ -1,0 +1,102 @@
+# RESOLVER-P1 Live Log Acquisition
+#
+# Why this exists: phase-1-log-acquisition.yml validates schemas and runs the
+# test suite, but never calls GitHub. The live path is the only place the
+# job-log redirect is exercised -- GitHub answers .../actions/jobs/{id}/logs
+# with a 302 to signed blob storage -- so a bug in redirect handling could not
+# be caught by any existing job here. One was: the transport replayed
+# `Authorization` onto the pre-signed request and the storage backend answered
+# 401, which surfaced as a GitHub credential failure.
+#
+# Manual trigger only. It costs nothing until someone runs it, and it needs a
+# real completed run WITH a failed job to have logs worth acquiring.
+name: RESOLVER-P1 Live Log Acquisition
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: owner/name whose workflow run should be acquired.
+        required: false
+        default: ""
+      run_id:
+        description: Numeric workflow run id. Must be completed and contain a failed job.
+        required: true
+
+permissions:
+  # actions: read is what lets the ambient GITHUB_TOKEN reach job logs.
+  # Without it the acquisition 403s rather than 401s.
+  actions: read
+  contents: read
+
+jobs:
+  acquire:
+    name: Acquire a real run
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+          python -m pip install -r requirements-ci.txt
+
+      - name: Acquire log evidence
+        env:
+          # The secret wired into this repository. The resolver reads
+          # GITHUB_TOKEN (then GH_TOKEN) in
+          # providers/github/provider.py:from_environment.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_REPOSITORY: ${{ inputs.repository || github.repository }}
+          TARGET_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/live-acquisition
+          l9-debt-resolver acquire-github-run \
+            --repository "${TARGET_REPOSITORY}" \
+            --run-id "${TARGET_RUN_ID}" \
+            --repository-root "${GITHUB_WORKSPACE}" \
+            --emit-bundles artifacts/live-acquisition \
+            | tee artifacts/live-acquisition/acquisition-report.json
+
+      - name: Assert evidence was actually acquired
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          report = json.loads(
+              pathlib.Path("artifacts/live-acquisition/acquisition-report.json").read_text()
+          )
+          state = report.get("terminal_state")
+          complete = report.get("complete_evidence_count", 0)
+          print(f"terminal_state={state} complete_evidence_count={complete}")
+
+          # A run with no failed job yields no logs to fetch. That is a bad
+          # input, not a transport failure, so say which it is.
+          if state == "no_failed_jobs":
+              sys.exit(
+                  "Run contains no failed job, so nothing was acquired. "
+                  "Re-run with a run_id that has one."
+              )
+          if state != "evidence_ready" or complete < 1:
+              sys.exit(f"Acquisition did not reach evidence_ready: {state}")
+          PY
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-acquisition-evidence
+          path: artifacts/live-acquisition
+          if-no-files-found: warn

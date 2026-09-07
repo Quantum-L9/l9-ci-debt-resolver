@@ -5,7 +5,12 @@ import json
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.parse import urlparse
+from urllib.request import (
+    HTTPRedirectHandler,
+    Request,
+    build_opener,
+)
 
 from l9_debt_resolver.acquisition.config import (
     AcquisitionConfig,
@@ -26,6 +31,58 @@ class HTTPResponse:
     status: int
     headers: dict[str, str]
     body: bytes
+
+
+class _CrossHostAuthStrippingRedirectHandler(HTTPRedirectHandler):
+    """Drop ``Authorization`` when a redirect leaves the original host.
+
+    GitHub answers ``/repos/{owner}/{repo}/actions/jobs/{id}/logs`` with a 302 to
+    a *signed* blob-storage URL. urllib's default handler replays every header on
+    the redirected request, so the pre-signed request also carries
+    ``Authorization: Bearer ...``. The storage backend rejects that combination
+    with 401, which this transport then reported as ``AuthenticationError`` -- a
+    credential failure that was never a credential problem.
+
+    curl and requests both drop credentials on a cross-host redirect for the same
+    reason. Same-host redirects keep the header so ordinary API redirects are
+    unaffected, and forwarding a bearer token to a third-party host would leak it
+    regardless.
+    """
+
+    def redirect_request(
+        self,
+        req: Request,
+        fp: Any,
+        code: int,
+        msg: str,
+        headers: Any,
+        newurl: str,
+    ) -> Request | None:
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is None:
+            return None
+        if urlparse(req.full_url).hostname != urlparse(newurl).hostname:
+            for header in list(redirected.headers):
+                if header.lower() == "authorization":
+                    del redirected.headers[header]
+        return redirected
+
+
+_OPENER = build_opener(_CrossHostAuthStrippingRedirectHandler())
+
+
+def urlopen(
+    request: Request,
+    *,
+    timeout: float,
+) -> Any:
+    """Open ``request`` with cross-host ``Authorization`` stripping applied.
+
+    Deliberately shadows ``urllib.request.urlopen``: the stdlib function uses the
+    global opener, which cannot carry this module's redirect policy. Keeping the
+    name means the module's existing patch point stays exactly where it was.
+    """
+    return _OPENER.open(request, timeout=timeout)
 
 
 class GitHubTransport:
