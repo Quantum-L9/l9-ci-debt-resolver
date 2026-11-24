@@ -1,0 +1,151 @@
+# Reusable: turn one failed CI run into a privacy-safe Intelligence feedback event.
+#
+# Called by a `workflow_run` listener in the repository whose CI failed, so the
+# ambient token can read that repository's job logs (`actions: read`).
+#
+# Chain: acquire-github-run -> build-feedback-event -> publish-feedback (HTTPS).
+# Nothing is repaired, rerun, or validated here; the event carries the contract's
+# own "did not happen" values for those fields.
+#
+# Requires repository or organization secrets:
+#   L9_FEEDBACK_TOKEN            bearer for the Intelligence ingress
+#   L9_FEEDBACK_PSEUDONYM_KEY    >= 32 bytes, stable across all events
+name: RESOLVER Feedback
+on:
+  workflow_call:
+    inputs:
+      run-id:
+        description: Numeric id of the failed workflow run.
+        required: true
+        type: string
+      repository:
+        description: owner/name of the failed run. Defaults to the caller repository.
+        required: false
+        type: string
+        default: ""
+      attempt-number:
+        description: Attempt number recorded in the event.
+        required: false
+        type: number
+        default: 1
+    secrets:
+      L9_FEEDBACK_TOKEN:
+        required: true
+      L9_FEEDBACK_PSEUDONYM_KEY:
+        required: true
+permissions:
+  contents: read
+  actions: read
+jobs:
+  feedback:
+    name: Publish failure feedback
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install resolver
+        env:
+          # Pin to the resolver commit that carries this workflow. Bump both together.
+          RESOLVER_REF: "ccef754fc33cad6864a76227c80abdb5387b63d2"
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet --upgrade pip
+          python -m pip install --quiet \
+            "l9-ci-debt-resolver @ git+https://github.com/Quantum-L9/l9-ci-debt-resolver@${RESOLVER_REF}"
+
+      - name: Acquire failed run
+        id: acquire
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ inputs.repository || github.repository }}
+          RUN_ID: ${{ inputs.run-id }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          l9-debt-resolver acquire-github-run \
+            --repository "${REPOSITORY}" \
+            --run-id "${RUN_ID}" \
+            --emit-bundles evidence > acquisition.json
+          python - <<'PY'
+          import json, os, pathlib
+          report = json.loads(pathlib.Path("acquisition.json").read_text())
+          bundles = sorted(pathlib.Path("evidence").glob("evidence_*.json"))
+          usable = report.get("terminal_state") == "evidence_ready" and bool(bundles)
+          print(f"terminal_state={report.get('terminal_state')} bundles={len(bundles)}")
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a") as fh:
+              fh.write(f"usable={'true' if usable else 'false'}\n")
+              fh.write(f"bundle={bundles[0] if bundles else ''}\n")
+          PY
+          if [ ! -s evidence/index.json ]; then echo "no evidence index"; fi
+
+      - name: Build feedback event
+        if: steps.acquire.outputs.usable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ inputs.repository || github.repository }}
+          RUN_ID: ${{ inputs.run-id }}
+          L9_FEEDBACK_PSEUDONYM_KEY: ${{ secrets.L9_FEEDBACK_PSEUDONYM_KEY }}
+        run: |
+          set -euo pipefail
+          RUN_JSON="$(curl -fsS \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPOSITORY}/actions/runs/${RUN_ID}")"
+          HEAD_SHA="$(printf '%s' "${RUN_JSON}" | python -c 'import json,sys; print(json.load(sys.stdin)["head_sha"])')"
+          HEAD_BRANCH="$(printf '%s' "${RUN_JSON}" | python -c 'import json,sys; print(json.load(sys.stdin).get("head_branch") or "unknown")')"
+          python - "${HEAD_SHA}" "${REPOSITORY}" <<'PY'
+          import json, sys
+          sha, repository = sys.argv[1], sys.argv[2]
+          document = {
+              "schema_version": "l9.sdk-knowledge-document/v1",
+              "repository": repository,
+              "revision": sha,
+              "snapshot": {
+                  "snapshot_id": "snapshot_" + sha[:16],
+                  "repository": repository,
+                  "revision": sha,
+              },
+              "entities": [],
+              "tests": [],
+              "contracts": [],
+              "findings": [],
+          }
+          with open("sdk-knowledge.json", "w", encoding="utf-8") as fh:
+              json.dump(document, fh, indent=2)
+              fh.write("\n")
+          PY
+          l9-debt-resolver build-feedback-event \
+            --evidence-bundle "${{ steps.acquire.outputs.bundle }}" \
+            --SDK-knowledge sdk-knowledge.json \
+            --repository "${REPOSITORY}" \
+            --run-id "${RUN_ID}" \
+            --branch "${HEAD_BRANCH}" \
+            --attempt-number "${{ inputs.attempt-number }}" \
+            --output feedback-event.json
+
+      - name: Publish feedback
+        if: steps.acquire.outputs.usable == 'true'
+        env:
+          L9_FEEDBACK_TOKEN: ${{ secrets.L9_FEEDBACK_TOKEN }}
+        run: |
+          set -euo pipefail
+          l9-debt-resolver publish-feedback \
+            --event feedback-event.json \
+            --outbox .resolver-feedback-outbox \
+            --transport https \
+            --destination https://feedback.quantumaipartners.com/api/v1/events
+
+      - name: Preserve outbox on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resolver-feedback-outbox
+          path: |
+            .resolver-feedback-outbox
+            acquisition.json
+          retention-days: 7
+          if-no-files-found: ignore
