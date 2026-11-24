@@ -13,26 +13,26 @@
 PYTHON ?= python3
 VENV := $(CURDIR)/.venv
 BIN := $(VENV)/bin
-PY := $(BIN)/python
+export PATH := $(BIN):$(PATH)
 
 .PHONY: repo-setup repo-validate repo-check repo-test-fast repo-test
 
 repo-setup: ## Create .venv and install the project with dev extras
-	@test -x "$(PY)" || $(PYTHON) -m venv "$(VENV)"
+	@test -x "$(BIN)/python" || $(PYTHON) -m venv "$(VENV)"
 	@"$(BIN)/pip" install --quiet --upgrade pip
 	@"$(BIN)/pip" install --quiet -e ".[dev]"
 
 repo-validate: ## Byte-compile and import the package
-	@$(PY) -m compileall -q src
-	@$(PY) -c "import l9_debt_resolver"
+	@python -m compileall -q src
+	@python -c "import l9_debt_resolver"
 
 repo-check: ## Ruff lint, format check, advisory strict mypy
-	@"$(BIN)/ruff" check .
-	@"$(BIN)/ruff" format --check .
-	-@"$(BIN)/mypy" src --show-error-codes --pretty --install-types --non-interactive
+	@ruff check .
+	@ruff format --check .
+	-@mypy src --show-error-codes --pretty --install-types --non-interactive
 
 repo-test-fast: ## Bounded pull-request selection
-	@$(PY) -m pytest tests/contracts tests/classification tests/feedback tests/resilience -q
+	pytest tests/contracts tests/classification tests/feedback tests/resilience -q
 
 repo-test: ## Full pytest suite
-	@$(PY) -m pytest tests -q
+	pytest -q
