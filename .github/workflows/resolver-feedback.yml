@@ -50,7 +50,7 @@ jobs:
       - name: Install resolver
         env:
           # Pin to the resolver commit that carries this workflow. Bump both together.
-          RESOLVER_REF: "ccef754fc33cad6864a76227c80abdb5387b63d2"
+          RESOLVER_REF: "4e0ecf05f976ae006ed39272031d550051298ee6"
         run: |
           set -euo pipefail
           python -m pip install --quiet --upgrade pip
