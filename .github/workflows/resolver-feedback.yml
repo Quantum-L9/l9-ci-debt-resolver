@@ -88,6 +88,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ inputs.repository || github.repository }}
           RUN_ID: ${{ inputs.run-id }}
+          EVIDENCE_BUNDLE: ${{ steps.acquire.outputs.bundle }}
+          ATTEMPT_NUMBER: ${{ inputs.attempt-number }}
           L9_FEEDBACK_PSEUDONYM_KEY: ${{ secrets.L9_FEEDBACK_PSEUDONYM_KEY }}
         run: |
           set -euo pipefail
@@ -119,12 +121,12 @@ jobs:
               fh.write("\n")
           PY
           l9-debt-resolver build-feedback-event \
-            --evidence-bundle "${{ steps.acquire.outputs.bundle }}" \
+            --evidence-bundle "${EVIDENCE_BUNDLE}" \
             --SDK-knowledge sdk-knowledge.json \
             --repository "${REPOSITORY}" \
             --run-id "${RUN_ID}" \
             --branch "${HEAD_BRANCH}" \
-            --attempt-number "${{ inputs.attempt-number }}" \
+            --attempt-number "${ATTEMPT_NUMBER}" \
             --output feedback-event.json
 
       - name: Publish feedback
