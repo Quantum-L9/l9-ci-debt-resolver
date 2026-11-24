@@ -41,21 +41,31 @@ jobs:
     name: Publish failure feedback
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      # Pin to the resolver commit that carries this workflow. Bump both together.
+      RESOLVER_REF: "4e0ecf05f976ae006ed39272031d550051298ee6"
     steps:
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1  # v6.3.0
         with:
           python-version: "3.12"
 
+      - name: Check out resolver at the pinned revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          repository: Quantum-L9/l9-ci-debt-resolver
+          ref: ${{ env.RESOLVER_REF }}
+          path: .resolver-src
+          persist-credentials: false
+
       - name: Install resolver
-        env:
-          # Pin to the resolver commit that carries this workflow. Bump both together.
-          RESOLVER_REF: "4e0ecf05f976ae006ed39272031d550051298ee6"
         run: |
           set -euo pipefail
           python -m pip install --quiet --upgrade pip
-          python -m pip install --quiet \
-            "l9-ci-debt-resolver @ git+https://github.com/Quantum-L9/l9-ci-debt-resolver@${RESOLVER_REF}"
+          # Editable, not a wheel: the schema registry resolves
+          # ``parents[3] / schemas / resolver`` from the source tree. A wheel
+          # install puts that path under site-packages, where schemas/ is absent.
+          python -m pip install --quiet -e .resolver-src
 
       - name: Acquire failed run
         id: acquire
